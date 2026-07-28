@@ -178,6 +178,7 @@ nav.app-nav {
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  opacity: 0.5;
 }
 .vortex-ring {
   position: absolute;
@@ -186,67 +187,44 @@ nav.app-nav {
   animation: spin linear infinite;
 }
 .vortex-ring:nth-child(1) {
-  width: 200px;
-  height: 200px;
+  width: 420px;
+  height: 420px;
   border-top-color: var(--purple);
   border-right-color: var(--purple);
-  animation-duration: 3s;
-  opacity: 0.6;
+  animation-duration: 9s;
+  opacity: 0.35;
 }
 .vortex-ring:nth-child(2) {
-  width: 320px;
-  height: 320px;
-  border-top-color: var(--cyan);
-  animation-duration: 4.5s;
-  animation-direction: reverse;
-  opacity: 0.4;
-}
-.vortex-ring:nth-child(3) {
-  width: 460px;
-  height: 460px;
-  border-top-color: var(--purple-light);
-  border-left-color: var(--purple-light);
-  animation-duration: 7s;
-  opacity: 0.3;
-}
-.vortex-ring:nth-child(4) {
   width: 620px;
   height: 620px;
-  border-bottom-color: var(--cyan);
-  animation-duration: 10s;
+  border-top-color: var(--cyan);
+  animation-duration: 14s;
   animation-direction: reverse;
-  opacity: 0.15;
+  opacity: 0.2;
 }
-.vortex-ring:nth-child(5) {
-  width: 800px;
-  height: 800px;
-  border-top-color: var(--purple);
-  animation-duration: 15s;
-  opacity: 0.08;
-}
-.vortex-core {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--cyan), var(--purple));
-  box-shadow: 0 0 40px var(--cyan), 0 0 80px var(--purple);
-  animation: pulse 2s ease-in-out infinite;
+.vortex-ring:nth-child(3) {
+  width: 860px;
+  height: 860px;
+  border-top-color: var(--purple-light);
+  animation-duration: 22s;
+  opacity: 0.1;
 }
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
 }
-@keyframes pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 40px var(--cyan), 0 0 80px var(--purple);
-  }
-  50% {
-    transform: scale(1.15);
-    box-shadow: 0 0 60px var(--cyan), 0 0 120px var(--purple);
-  }
+.hero-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  align-items: center;
+  gap: 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  text-align: left;
 }
 .hero-content {
   position: relative;
@@ -276,13 +254,13 @@ nav.app-nav {
   color: var(--text-muted);
   font-size: 1.1rem;
   max-width: 520px;
-  margin: 0 auto 2.5rem;
+  margin: 0 0 2.5rem;
   line-height: 1.7;
 }
 .hero-ctas {
   display: flex;
   gap: 1rem;
-  justify-content: center;
+  justify-content: flex-start;
   flex-wrap: wrap;
 }
 .btn-primary {
@@ -322,6 +300,226 @@ nav.app-nav {
 .btn-outline:hover {
   border-color: var(--purple);
   color: var(--purple);
+}
+
+/* HERO PRINTER ILLUSTRATION */
+.printer-scene {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 380px;
+}
+.printer-glow {
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, rgba(0, 212, 255, 0.25), transparent 70%);
+  filter: blur(8px);
+  animation: printerGlowPulse 3s ease-in-out infinite;
+}
+.printer-frame {
+  position: relative;
+  width: 280px;
+  height: 300px;
+}
+.printer-post {
+  position: absolute;
+  top: 0;
+  width: 10px;
+  height: 280px;
+  background: linear-gradient(180deg, var(--purple-light), var(--bg3));
+  border-radius: 6px;
+  box-shadow: 0 0 12px rgba(108, 59, 255, 0.5);
+}
+.printer-post-left {
+  left: 10px;
+}
+.printer-post-right {
+  right: 10px;
+}
+.printer-rail {
+  position: absolute;
+  top: 30px;
+  left: 10px;
+  right: 10px;
+  height: 8px;
+  background: linear-gradient(90deg, var(--purple), var(--cyan));
+  border-radius: 4px;
+  box-shadow: 0 0 10px var(--cyan);
+}
+.printer-head {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  width: 34px;
+  height: 24px;
+  margin-left: -17px;
+  background: linear-gradient(135deg, var(--cyan), var(--purple));
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 212, 255, 0.5);
+  animation: printerHeadMove 4s ease-in-out infinite;
+}
+.printer-head-light {
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px 2px #fff;
+  animation: printerBlink 1s steps(2, jump-none) infinite;
+}
+.printer-filament {
+  position: absolute;
+  top: 46px;
+  left: 50%;
+  width: 2px;
+  height: 36px;
+  margin-left: -1px;
+  background: linear-gradient(180deg, var(--cyan), transparent);
+  opacity: 0.6;
+  animation: printerHeadMove 4s ease-in-out infinite;
+}
+.printer-bed {
+  position: absolute;
+  bottom: 20px;
+  left: 4px;
+  right: 4px;
+  height: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.25);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.printer-object {
+  width: 70px;
+  height: 4px;
+  background: repeating-linear-gradient(to bottom, var(--purple) 0 5px, var(--purple-light) 5px 10px);
+  border-radius: 4px 4px 0 0;
+  box-shadow: 0 0 18px rgba(108, 59, 255, 0.6);
+  animation: printerBuild 4s ease-in-out infinite;
+}
+.printer-spark {
+  position: absolute;
+  bottom: 34px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 10px var(--cyan);
+  animation: printerSpark 4s ease-in-out infinite;
+}
+.printer-caption {
+  margin-top: 1.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.printer-caption::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+  animation: pulse-dot 1.5s infinite;
+}
+@keyframes printerGlowPulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.08);
+  }
+}
+@keyframes printerHeadMove {
+  0%,
+  100% {
+    transform: translateX(-60px);
+  }
+  50% {
+    transform: translateX(60px);
+  }
+}
+@keyframes printerBlink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+@keyframes printerBuild {
+  0% {
+    height: 4px;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  70% {
+    height: 130px;
+    opacity: 1;
+  }
+  85% {
+    height: 130px;
+    opacity: 1;
+  }
+  95% {
+    opacity: 0;
+  }
+  100% {
+    height: 4px;
+    opacity: 0;
+  }
+}
+@keyframes printerSpark {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translate(-4px, 0);
+  }
+  15% {
+    opacity: 0.8;
+  }
+  55% {
+    opacity: 0.6;
+    transform: translate(14px, -90px);
+  }
+  65% {
+    opacity: 0;
+  }
+}
+@media (max-width: 960px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .hero-sub {
+    margin: 0 auto 2.5rem;
+  }
+  .hero-ctas {
+    justify-content: center;
+  }
+  .printer-scene {
+    height: 300px;
+  }
 }
 
 /* STATS */

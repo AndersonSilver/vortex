@@ -34,31 +34,47 @@ export function HomePage() {
           <div className="vortex-ring" />
           <div className="vortex-ring" />
           <div className="vortex-ring" />
-          <div className="vortex-ring" />
-          <div className="vortex-ring" />
-          <div className="vortex-core" />
         </div>
-        <div className="hero-content">
-          <div className="hero-eyebrow">Impressão 3D de Precisão Profissional</div>
-          <h1 className="hero-title">
-            Do Digital ao
-            <br />
-            <span>Real em 24h</span>
-          </h1>
-          <p className="hero-sub">
-            Transformamos seus projetos em peças físicas com qualidade industrial. FDM, resina e SLS —
-            entregamos o futuro hoje.
-          </p>
-          <div className="hero-ctas">
-            <button
-              className="btn-primary"
-              onClick={() => document.getElementById("catalog")?.scrollIntoView({ behavior: "smooth" })}
-            >
-              Ver Catálogo
-            </button>
-            <button className="btn-outline" onClick={() => setQuoteModalOpen(true)}>
-              Enviar Meu Arquivo
-            </button>
+        <div className="hero-grid">
+          <div className="hero-content">
+            <div className="hero-eyebrow">Impressão 3D de Precisão Profissional</div>
+            <h1 className="hero-title">
+              Do Digital ao
+              <br />
+              <span>Real em 24h</span>
+            </h1>
+            <p className="hero-sub">
+              Transformamos seus projetos em peças físicas com qualidade industrial. FDM, resina e SLS —
+              entregamos o futuro hoje.
+            </p>
+            <div className="hero-ctas">
+              <button
+                className="btn-primary"
+                onClick={() => document.getElementById("catalog")?.scrollIntoView({ behavior: "smooth" })}
+              >
+                Ver Catálogo
+              </button>
+              <button className="btn-outline" onClick={() => setQuoteModalOpen(true)}>
+                Enviar Meu Arquivo
+              </button>
+            </div>
+          </div>
+          <div className="printer-scene" aria-hidden="true">
+            <div className="printer-glow" />
+            <div className="printer-frame">
+              <div className="printer-post printer-post-left" />
+              <div className="printer-post printer-post-right" />
+              <div className="printer-rail" />
+              <div className="printer-head">
+                <div className="printer-head-light" />
+              </div>
+              <div className="printer-filament" />
+              <div className="printer-bed">
+                <div className="printer-object" />
+              </div>
+              <div className="printer-spark" />
+            </div>
+            <div className="printer-caption">Imprimindo agora · Camada 214/300</div>
           </div>
         </div>
       </div>
