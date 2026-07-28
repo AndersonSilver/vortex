@@ -1,0 +1,51 @@
+{
+  "name": "@vortex/api",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only --ignore-watch node_modules --ignore-watch packages/shared -r tsconfig-paths/register -r reflect-metadata src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "migration:generate": "tsx ./node_modules/typeorm/cli.js migration:generate -d src/config/data-source.ts",
+    "migration:run": "tsx ./node_modules/typeorm/cli.js migration:run -d src/config/data-source.ts",
+    "migration:revert": "tsx ./node_modules/typeorm/cli.js migration:revert -d src/config/data-source.ts",
+    "seed": "tsx src/seeds/run-seed.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.669.0",
+    "@aws-sdk/s3-request-presigner": "^3.669.0",
+    "@vortex/shared": "workspace:*",
+    "axios": "^1.7.7",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "google-auth-library": "^9.14.1",
+    "jsonwebtoken": "^9.0.2",
+    "mercadopago": "^2.0.15",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.13.0",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.20",
+    "uuid": "^10.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.7.5",
+    "@types/uuid": "^10.0.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.23.1",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.2"
+  }
+}

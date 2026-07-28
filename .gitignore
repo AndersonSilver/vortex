@@ -1,0 +1,11 @@
+node_modules/
+dist/
+build/
+.turbo/
+.env
+.env.production
+.env.*.local
+*.log
+.DS_Store
+apps/api/uploads/
+coverage/

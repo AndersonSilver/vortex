@@ -1,0 +1,222 @@
+import type { CreateOrderInput, OrderDTO, OrderItemDTO } from "@vortex/shared";
+import { AppDataSource } from "../../config/data-source";
+import { Address, CartItem, Coupon, Order, OrderItem, User } from "../../entities";
+import { HttpError } from "../../utils/async-handler";
+import { calculateDiscount, calculateSubtotal, isCouponUsable } from "../../utils/pricing";
+import { getSettingsEntity } from "../settings/settings.service";
+import { quoteShipping } from "../shipping/shipping-provider.service";
+import { toAddressDTO } from "../addresses/addresses.routes";
+
+const orderRepo = () => AppDataSource.getRepository(Order);
+const cartRepo = () => AppDataSource.getRepository(CartItem);
+const addressRepo = () => AppDataSource.getRepository(Address);
+const couponRepo = () => AppDataSource.getRepository(Coupon);
+const userRepo = () => AppDataSource.getRepository(User);
+
+const WEIGHT_PER_UNIT_KG = 0.25;
+const BASE_DIMENSIONS_CM = { lengthCm: 20, widthCm: 15, heightCm: 10 };
+
+function toOrderItemDTO(item: OrderItem): OrderItemDTO {
+  return {
+    id: item.id,
+    productId: item.productId,
+    name: item.nameSnapshot,
+    price: Number(item.priceSnapshot),
+    qty: item.qty,
+    color: item.color,
+    material: item.material,
+  };
+}
+
+export function toOrderDTO(order: Order): OrderDTO {
+  return {
+    id: order.id,
+    orderNumber: order.orderNumber,
+    status: order.status,
+    paymentMethod: order.paymentMethod,
+    paymentStatus: order.paymentStatus,
+    subtotal: Number(order.subtotal),
+    discount: Number(order.discount),
+    shippingCost: Number(order.shippingCost),
+    total: Number(order.total),
+    shippingMethod: order.shippingMethod,
+    couponCode: order.couponCode ?? null,
+    customerName: order.customerName,
+    customerEmail: order.customerEmail,
+    addressSnapshot: order.addressSnapshot ?? null,
+    trackingCode: order.trackingCode ?? null,
+    trackingUrl: order.trackingUrl ?? null,
+    items: order.items.map(toOrderItemDTO),
+    createdAt: order.createdAt.toISOString(),
+  };
+}
+
+async function generateOrderNumber(): Promise<string> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const candidate = `VX-${Math.floor(100000 + Math.random() * 900000)}`;
+    const exists = await orderRepo().findOneBy({ orderNumber: candidate });
+    if (!exists) return candidate;
+  }
+  throw new HttpError(500, "Não foi possível gerar o número do pedido.");
+}
+
+export async function createOrder(userId: string, input: CreateOrderInput): Promise<OrderDTO> {
+  const cartItems = await cartRepo().find({
+    where: { userId },
+    relations: { product: true },
+  });
+  if (cartItems.length === 0) {
+    throw new HttpError(400, "Seu carrinho está vazio.");
+  }
+
+  const address = await addressRepo().findOneBy({ id: input.addressId, userId });
+  if (!address) {
+    throw new HttpError(404, "Endereço não encontrado.");
+  }
+
+  const user = await userRepo().findOneBy({ id: userId });
+  if (!user) {
+    throw new HttpError(404, "Usuário não encontrado.");
+  }
+
+  const subtotal = calculateSubtotal(
+    cartItems.map((i) => ({ price: Number(i.product.price), qty: i.qty })),
+  );
+
+  let coupon: Coupon | null = null;
+  let discount = 0;
+  if (input.couponCode) {
+    coupon = await couponRepo().findOneBy({ code: input.couponCode.toUpperCase().trim() });
+    if (!coupon) {
+      throw new HttpError(400, "Cupom inválido ou expirado.");
+    }
+    const usable = isCouponUsable(coupon, subtotal);
+    if (!usable.ok) {
+      throw new HttpError(400, usable.reason);
+    }
+  }
+
+  const settings = await getSettingsEntity();
+
+  let shippingCost = 0;
+  if (input.shippingMethod !== "pickup") {
+    const totalQty = cartItems.reduce((sum, item) => sum + item.qty, 0) || 1;
+    const options = await quoteShipping(address.cep, {
+      weightKg: totalQty * WEIGHT_PER_UNIT_KG,
+      ...BASE_DIMENSIONS_CM,
+      heightCm: Math.min(60, BASE_DIMENSIONS_CM.heightCm + totalQty * 2),
+    });
+    const option = options.find((o) => o.method === input.shippingMethod);
+    shippingCost = option?.price ?? 0;
+    if (
+      input.shippingMethod === "pac" &&
+      subtotal - (coupon ? calculateDiscount(coupon, subtotal, shippingCost) : 0) >=
+        Number(settings.freeShippingThreshold)
+    ) {
+      shippingCost = 0;
+    }
+  }
+
+  if (coupon) {
+    discount = calculateDiscount(coupon, subtotal, shippingCost);
+    if (coupon.type === "free_shipping") {
+      shippingCost = 0;
+      discount = 0;
+    }
+  }
+
+  let merchandiseTotal = Math.max(0, subtotal - discount);
+  if (input.paymentMethod === "pix") {
+    merchandiseTotal *= 1 - Number(settings.pixDiscountPercent) / 100;
+  } else if (input.paymentMethod === "boleto") {
+    merchandiseTotal *= 1 - Number(settings.boletoDiscountPercent) / 100;
+  }
+  const total = Math.max(0, merchandiseTotal + shippingCost);
+
+  const orderNumber = await generateOrderNumber();
+
+  const order = orderRepo().create({
+    orderNumber,
+    userId,
+    customerName: user.name,
+    customerEmail: user.email,
+    status: "pending",
+    paymentMethod: input.paymentMethod,
+    paymentStatus: "pending",
+    subtotal,
+    discount,
+    shippingCost,
+    total,
+    shippingMethod: input.shippingMethod,
+    couponCode: coupon?.code ?? null,
+    addressSnapshot: toAddressDTO(address),
+    items: cartItems.map((item) => ({
+      productId: item.productId,
+      nameSnapshot: item.product.name,
+      priceSnapshot: item.product.price,
+      qty: item.qty,
+      color: item.color,
+      material: item.material,
+    })),
+  });
+
+  const saved = await orderRepo().save(order);
+
+  if (coupon) {
+    coupon.uses += 1;
+    await couponRepo().save(coupon);
+  }
+
+  await cartRepo().delete({ userId });
+
+  return toOrderDTO(saved);
+}
+
+export async function listOrdersForUser(userId: string): Promise<OrderDTO[]> {
+  const orders = await orderRepo().find({ where: { userId }, order: { createdAt: "DESC" } });
+  return orders.map(toOrderDTO);
+}
+
+export async function listAllOrders(status?: string): Promise<OrderDTO[]> {
+  const orders = await orderRepo().find({
+    where: status && status !== "all" ? { status: status as Order["status"] } : {},
+    order: { createdAt: "DESC" },
+  });
+  return orders.map(toOrderDTO);
+}
+
+export async function getOrderByIdForUser(userId: string, id: string): Promise<OrderDTO> {
+  const order = await orderRepo().findOne({ where: { id, userId } });
+  if (!order) throw new HttpError(404, "Pedido não encontrado.");
+  return toOrderDTO(order);
+}
+
+export async function getOrderById(id: string): Promise<Order> {
+  const order = await orderRepo().findOne({ where: { id } });
+  if (!order) throw new HttpError(404, "Pedido não encontrado.");
+  return order;
+}
+
+export async function updateOrderStatus(id: string, status: Order["status"]): Promise<OrderDTO> {
+  const order = await orderRepo().findOneBy({ id });
+  if (!order) throw new HttpError(404, "Pedido não encontrado.");
+  order.status = status;
+  const saved = await orderRepo().save(order);
+  return toOrderDTO(saved);
+}
+
+export async function updateOrderTracking(
+  id: string,
+  trackingCode: string,
+  trackingUrl?: string,
+): Promise<OrderDTO> {
+  const order = await orderRepo().findOneBy({ id });
+  if (!order) throw new HttpError(404, "Pedido não encontrado.");
+  order.trackingCode = trackingCode;
+  order.trackingUrl = trackingUrl ?? `https://www.linkcorreios.com.br/${trackingCode}`;
+  if (order.status === "pending" || order.status === "printing") {
+    order.status = "shipped";
+  }
+  const saved = await orderRepo().save(order);
+  return toOrderDTO(saved);
+}
