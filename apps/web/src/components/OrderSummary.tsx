@@ -102,7 +102,11 @@ export function OrderSummary({ items, shippingCost, shippingLabel, checkoutActio
           {checkoutAction.label}
         </button>
       )}
-      <div className="payment-icons">💳 🔐 📄</div>
+      <div className="payment-icons">
+        <span>💳</span>
+        <span>🔐</span>
+        <span>📄</span>
+      </div>
       <div style={{ textAlign: "center", fontSize: ".75rem", color: "var(--text-muted)", marginTop: ".5rem" }}>
         🔒 Compra 100% segura
       </div>

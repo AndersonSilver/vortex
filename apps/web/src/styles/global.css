@@ -902,31 +902,60 @@ footer {
   margin: 0 auto;
   align-items: start;
 }
+.cart-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  margin-bottom: 2rem;
+}
 .cart-title {
   font-family: "Orbitron", monospace;
   font-size: 1.6rem;
-  margin-bottom: 2rem;
+}
+.cart-count {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+}
+@keyframes cartItemIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .cart-item {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1.5rem;
+  padding: 1.25rem;
   display: flex;
   gap: 1.5rem;
   align-items: center;
   margin-bottom: 1rem;
-  transition: 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.2s;
+  animation: cartItemIn 0.35s ease both;
 }
 .cart-item:hover {
   border-color: rgba(108, 59, 255, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  transform: translateY(-2px);
 }
 .cart-item-img {
-  width: 96px;
-  height: 96px;
+  width: 110px;
+  height: 110px;
   background: var(--bg3);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -938,25 +967,63 @@ footer {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s;
+}
+.cart-item:hover .cart-item-img img {
+  transform: scale(1.08);
 }
 .cart-item-info {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+}
+.cart-item-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
 }
 .cart-item-name {
   font-weight: 600;
   font-size: 1.05rem;
-  margin-bottom: 0.3rem;
+  line-height: 1.3;
 }
-.cart-item-meta {
-  font-size: 0.8rem;
+.cart-item-tags {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.cart-tag {
+  background: var(--bg3);
+  border: 1px solid var(--border);
   color: var(--text-muted);
-  margin-bottom: 0.6rem;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+.cart-item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.2rem;
 }
 .cart-item-price {
   font-family: "Orbitron", monospace;
   font-size: 1.1rem;
   color: var(--purple);
   font-weight: 700;
+  text-align: right;
+}
+.cart-item-old-price {
+  font-family: "Inter", sans-serif;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-decoration: line-through;
+  font-weight: 400;
+  margin-right: 0.4rem;
 }
 .cart-item-unit-price {
   font-family: "Inter", sans-serif;
@@ -964,25 +1031,25 @@ footer {
   color: var(--text-muted);
   font-weight: 400;
 }
-.cart-item-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.8rem;
-}
-.btn-remove {
-  background: none;
+.btn-remove-icon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  background: var(--bg3);
   border: 1px solid var(--border);
   color: var(--text-muted);
-  padding: 0.3rem 0.7rem;
-  border-radius: 6px;
+  border-radius: 50%;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: 0.2s;
 }
-.btn-remove:hover {
+.btn-remove-icon:hover {
   border-color: var(--danger);
   color: var(--danger);
+  background: rgba(255, 68, 102, 0.08);
 }
 .cart-empty {
   text-align: center;
@@ -1002,6 +1069,16 @@ footer {
   padding: 1.5rem;
   position: sticky;
   top: 80px;
+  overflow: hidden;
+}
+.order-summary::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--purple), var(--cyan));
 }
 .order-summary h3 {
   font-family: "Orbitron", monospace;
@@ -1094,8 +1171,17 @@ footer {
   display: flex;
   justify-content: center;
   gap: 0.5rem;
-  margin-top: 1rem;
-  font-size: 1.5rem;
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.payment-icons span {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.35rem 0.55rem;
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 /* CHECKOUT */

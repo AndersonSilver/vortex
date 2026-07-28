@@ -38,10 +38,15 @@ export function CartPage() {
         ) : (
           <div className="cart-layout">
             <div>
-              <h1 className="cart-title">Seu Carrinho</h1>
+              <div className="cart-title-row">
+                <h1 className="cart-title">Seu Carrinho</h1>
+                <span className="cart-count">
+                  {items.length} {items.length === 1 ? "item" : "itens"}
+                </span>
+              </div>
               <div>
-                {items.map((item) => (
-                  <div className="cart-item" key={item.id}>
+                {items.map((item, index) => (
+                  <div className="cart-item" key={item.id} style={{ animationDelay: `${index * 0.05}s` }}>
                     <div className="cart-item-img">
                       {item.product.imageUrl ? (
                         <img src={item.product.imageUrl} alt={item.product.name} />
@@ -50,29 +55,42 @@ export function CartPage() {
                       )}
                     </div>
                     <div className="cart-item-info">
-                      <div className="cart-item-name">{item.product.name}</div>
-                      <div className="cart-item-meta">
-                        Cor: {item.color} · Material: {item.material}
-                      </div>
-                      <div className="cart-item-price">
-                        R$ {(item.product.price * item.qty).toFixed(2)}
-                        {item.qty > 1 && (
-                          <span className="cart-item-unit-price"> (R$ {item.product.price.toFixed(2)}/un)</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="cart-item-actions">
-                      <button className="btn-remove" onClick={() => removeItem.mutate(item.id)}>
-                        ✕ Remover
-                      </button>
-                      <div className="qty-ctrl">
+                      <div className="cart-item-top">
+                        <div className="cart-item-name">{item.product.name}</div>
                         <button
-                          onClick={() => updateItem.mutate({ id: item.id, qty: Math.max(1, item.qty - 1) })}
+                          className="btn-remove-icon"
+                          onClick={() => removeItem.mutate(item.id)}
+                          aria-label="Remover item"
+                          title="Remover item"
                         >
-                          −
+                          ✕
                         </button>
-                        <span>{item.qty}</span>
-                        <button onClick={() => updateItem.mutate({ id: item.id, qty: item.qty + 1 })}>+</button>
+                      </div>
+                      <div className="cart-item-tags">
+                        <span className="cart-tag">🎨 {item.color}</span>
+                        <span className="cart-tag">🧵 {item.material}</span>
+                      </div>
+                      <div className="cart-item-footer">
+                        <div className="qty-ctrl">
+                          <button
+                            onClick={() => updateItem.mutate({ id: item.id, qty: Math.max(1, item.qty - 1) })}
+                          >
+                            −
+                          </button>
+                          <span>{item.qty}</span>
+                          <button onClick={() => updateItem.mutate({ id: item.id, qty: item.qty + 1 })}>+</button>
+                        </div>
+                        <div className="cart-item-price">
+                          {item.product.oldPrice && (
+                            <span className="cart-item-old-price">
+                              R$ {(item.product.oldPrice * item.qty).toFixed(2)}
+                            </span>
+                          )}
+                          R$ {(item.product.price * item.qty).toFixed(2)}
+                          {item.qty > 1 && (
+                            <span className="cart-item-unit-price"> (R$ {item.product.price.toFixed(2)}/un)</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
