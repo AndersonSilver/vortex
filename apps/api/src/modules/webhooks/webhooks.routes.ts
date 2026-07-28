@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { asyncHandler } from "../../utils/async-handler";
+import { asyncHandler, HttpError } from "../../utils/async-handler";
 import { handleWebhookNotification } from "../payments/payments.service";
+import { isValidMercadoPagoSignature } from "./mercadopago-signature";
 
 export const webhooksRouter = Router();
 
@@ -11,6 +12,10 @@ webhooksRouter.post(
     const paymentId = data?.id ?? (req.query["data.id"] as string | undefined);
 
     if (type === "payment" && paymentId) {
+      if (!isValidMercadoPagoSignature(req, String(paymentId))) {
+        console.warn(`Webhook do Mercado Pago rejeitado: assinatura inválida (paymentId=${paymentId}).`);
+        throw new HttpError(401, "Assinatura do webhook inválida.");
+      }
       await handleWebhookNotification(String(paymentId));
     }
 

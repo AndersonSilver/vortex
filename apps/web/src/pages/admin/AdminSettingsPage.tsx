@@ -113,6 +113,61 @@ export function AdminSettingsPage() {
         </div>
 
         <div className="admin-form">
+          <h3>🧮 Precificação</h3>
+          <div className="form-group">
+            <label>Custo de energia (R$/kWh)</label>
+            <input
+              className="admin-input"
+              type="number"
+              step="0.01"
+              value={form.electricityCostPerKwh}
+              onChange={(e) => set("electricityCostPerKwh", Number(e.target.value))}
+            />
+          </div>
+          <div className="form-group">
+            <label>Custo de máquina (R$/hora)</label>
+            <input
+              className="admin-input"
+              type="number"
+              step="0.01"
+              value={form.machineCostPerHour}
+              onChange={(e) => set("machineCostPerHour", Number(e.target.value))}
+            />
+          </div>
+          <div className="form-group">
+            <label>Custo de mão de obra (R$/hora)</label>
+            <input
+              className="admin-input"
+              type="number"
+              step="0.01"
+              value={form.laborCostPerHour}
+              onChange={(e) => set("laborCostPerHour", Number(e.target.value))}
+            />
+          </div>
+          <div className="form-group">
+            <label>Taxa padrão de perda/falha (%)</label>
+            <input
+              className="admin-input"
+              type="number"
+              value={form.defaultWasteRatePercent}
+              onChange={(e) => set("defaultWasteRatePercent", Number(e.target.value))}
+            />
+          </div>
+          <div className="form-group">
+            <label>Margem padrão (%)</label>
+            <input
+              className="admin-input"
+              type="number"
+              value={form.defaultMarginPercent}
+              onChange={(e) => set("defaultMarginPercent", Number(e.target.value))}
+            />
+          </div>
+          <button className="btn-primary" onClick={handleSave}>
+            Salvar
+          </button>
+        </div>
+
+        <div className="admin-form">
           <h3>📧 Notificações</h3>
           <div className="form-group" style={{ flexDirection: "row", alignItems: "center", gap: "1rem" }}>
             <label style={{ margin: 0 }}>Novo pedido</label>

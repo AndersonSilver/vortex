@@ -7,6 +7,12 @@ const NAV_ITEMS = [
   { to: "/admin/cupons", icon: "🎟️", label: "Cupons" },
   { to: "/admin/clientes", icon: "👥", label: "Clientes" },
   { to: "/admin/orcamentos", icon: "🧩", label: "Orçamentos" },
+  { to: "/admin/estoque", icon: "🧵", label: "Estoque" },
+  { to: "/admin/fornecedores", icon: "🏢", label: "Fornecedores" },
+  { to: "/admin/compras", icon: "🛒", label: "Compras" },
+  { to: "/admin/producao", icon: "🏭", label: "Produção" },
+  { to: "/admin/precificacao", icon: "🧮", label: "Precificação" },
+  { to: "/admin/financeiro", icon: "💹", label: "Financeiro" },
   { to: "/admin/configuracoes", icon: "⚙️", label: "Configurações" },
 ];
 

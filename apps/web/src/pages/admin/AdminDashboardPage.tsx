@@ -27,6 +27,12 @@ export function AdminDashboardPage() {
           <div className="kpi-icon">💰</div>
         </div>
         <div className="kpi-card">
+          <div className="kpi-label">Lucro do Mês</div>
+          <div className="kpi-value">R$ {stats.monthProfit.toFixed(2)}</div>
+          <div className="kpi-icon">💹</div>
+          <div style={{ fontSize: ".72rem", color: "var(--text-muted)" }}>{stats.monthMarginPercent.toFixed(1)}% margem</div>
+        </div>
+        <div className="kpi-card">
           <div className="kpi-label">Pedidos Hoje</div>
           <div className="kpi-value">{stats.ordersToday}</div>
           <div className="kpi-icon">📦</div>

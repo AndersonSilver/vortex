@@ -1,7 +1,10 @@
 import { z } from "zod";
 import {
   COUPON_TYPES,
+  FILAMENT_MATERIALS,
+  FILAMENT_MOVEMENT_TYPES,
   PAYMENT_METHODS,
+  PRINT_JOB_STATUSES,
   PRODUCT_BADGES,
   PRODUCT_CATEGORIES,
   SHIPPING_METHODS,
@@ -49,6 +52,10 @@ export const productSchema = z.object({
   specs: z.record(z.string(), z.string()).default({}),
   stock: z.number().int().min(0).default(0),
   active: z.boolean().default(true),
+  filamentId: z.string().uuid().nullable().optional(),
+  weightGrams: z.number().positive().nullable().optional(),
+  printTimeMinutes: z.number().int().positive().nullable().optional(),
+  costPrice: z.number().positive().nullable().optional(),
 });
 export type ProductInput = z.infer<typeof productSchema>;
 
@@ -120,8 +127,109 @@ export const storeSettingsSchema = z.object({
   notifyNewOrder: z.boolean(),
   notifyPaymentConfirmed: z.boolean(),
   notifyLowStock: z.boolean(),
+  electricityCostPerKwh: z.number().min(0),
+  machineCostPerHour: z.number().min(0),
+  laborCostPerHour: z.number().min(0),
+  defaultWasteRatePercent: z.number().min(0).max(100),
+  defaultMarginPercent: z.number().min(0).max(100),
 });
 export type StoreSettingsInput = z.infer<typeof storeSettingsSchema>;
+
+export const filamentSchema = z.object({
+  brand: z.string().min(1).max(120),
+  material: z.enum(FILAMENT_MATERIALS),
+  color: z.string().min(1).max(60),
+  colorHex: z.string().max(9).nullable().optional(),
+  spoolWeightGrams: z.number().int().positive(),
+  remainingWeightGrams: z.number().int().min(0),
+  costPerSpool: z.number().positive(),
+  lowStockThresholdGrams: z.number().int().min(0).default(150),
+  supplierId: z.string().uuid().nullable().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+  active: z.boolean().default(true),
+});
+export type FilamentInput = z.infer<typeof filamentSchema>;
+
+export const filamentUpdateSchema = filamentSchema.omit({ remainingWeightGrams: true });
+export type FilamentUpdateInput = z.infer<typeof filamentUpdateSchema>;
+
+export const filamentMovementSchema = z.object({
+  type: z.enum(FILAMENT_MOVEMENT_TYPES),
+  changeGrams: z.number().int().refine((v) => v !== 0, "A quantidade não pode ser zero."),
+  reason: z.string().max(200).optional(),
+});
+export type FilamentMovementInput = z.infer<typeof filamentMovementSchema>;
+
+export const printerSchema = z.object({
+  name: z.string().min(1).max(120),
+  model: z.string().max(120).nullable().optional(),
+  wattage: z.number().int().positive().default(150),
+  purchaseCost: z.number().positive().nullable().optional(),
+  location: z.string().max(120).nullable().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+  active: z.boolean().default(true),
+});
+export type PrinterInput = z.infer<typeof printerSchema>;
+
+export const printerStatusSchema = z.object({
+  status: z.enum(["idle", "maintenance", "offline"]),
+});
+export type PrinterStatusInput = z.infer<typeof printerStatusSchema>;
+
+export const printerMaintenanceLogSchema = z.object({
+  description: z.string().min(1).max(200),
+  cost: z.number().positive().nullable().optional(),
+  hoursAtMaintenance: z.number().positive().nullable().optional(),
+});
+export type PrinterMaintenanceLogInput = z.infer<typeof printerMaintenanceLogSchema>;
+
+export const printJobSchema = z.object({
+  label: z.string().min(1).max(200),
+  printerId: z.string().uuid().nullable().optional(),
+  filamentId: z.string().uuid().nullable().optional(),
+  orderItemId: z.string().uuid().nullable().optional(),
+  customQuoteId: z.string().uuid().nullable().optional(),
+  estimatedMinutes: z.number().int().positive().nullable().optional(),
+  weightGramsUsed: z.number().int().positive().nullable().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+});
+export type PrintJobInput = z.infer<typeof printJobSchema>;
+
+export const printJobStatusUpdateSchema = z.object({
+  status: z.enum(PRINT_JOB_STATUSES),
+  actualMinutes: z.number().int().positive().nullable().optional(),
+  weightGramsUsed: z.number().int().positive().nullable().optional(),
+});
+export type PrintJobStatusUpdateInput = z.infer<typeof printJobStatusUpdateSchema>;
+
+export const supplierSchema = z.object({
+  name: z.string().min(1).max(160),
+  contactName: z.string().max(160).nullable().optional(),
+  phone: z.string().max(40).nullable().optional(),
+  email: z.string().email().nullable().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+  active: z.boolean().default(true),
+});
+export type SupplierInput = z.infer<typeof supplierSchema>;
+
+export const purchaseOrderItemSchema = z.object({
+  filamentId: z.string().uuid(),
+  quantityGrams: z.number().int().positive(),
+  totalCost: z.number().positive(),
+});
+export type PurchaseOrderItemInput = z.infer<typeof purchaseOrderItemSchema>;
+
+export const purchaseOrderSchema = z.object({
+  supplierId: z.string().uuid(),
+  notes: z.string().max(2000).nullable().optional(),
+  items: z.array(purchaseOrderItemSchema).min(1, "Adicione ao menos um item."),
+});
+export type PurchaseOrderInput = z.infer<typeof purchaseOrderSchema>;
+
+export const purchaseOrderStatusSchema = z.object({
+  status: z.enum(["received", "cancelled"]),
+});
+export type PurchaseOrderStatusInput = z.infer<typeof purchaseOrderStatusSchema>;
 
 export const createPaymentSchema = z.object({
   method: z.enum(PAYMENT_METHODS),

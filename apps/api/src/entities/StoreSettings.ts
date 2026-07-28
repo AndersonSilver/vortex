@@ -41,6 +41,21 @@ export class StoreSettings {
   @Column({ name: "notify_low_stock", type: "boolean", default: true })
   notifyLowStock!: boolean;
 
+  @Column({ name: "electricity_cost_per_kwh", type: "numeric", precision: 6, scale: 4, default: 0.9 })
+  electricityCostPerKwh!: number;
+
+  @Column({ name: "machine_cost_per_hour", type: "numeric", precision: 10, scale: 2, default: 2.0 })
+  machineCostPerHour!: number;
+
+  @Column({ name: "labor_cost_per_hour", type: "numeric", precision: 10, scale: 2, default: 20.0 })
+  laborCostPerHour!: number;
+
+  @Column({ name: "default_waste_rate_percent", type: "numeric", precision: 5, scale: 2, default: 5 })
+  defaultWasteRatePercent!: number;
+
+  @Column({ name: "default_margin_percent", type: "numeric", precision: 5, scale: 2, default: 40 })
+  defaultMarginPercent!: number;
+
   @UpdateDateColumn({ name: "updated_at" })
   updatedAt!: Date;
 }

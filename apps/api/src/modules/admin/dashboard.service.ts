@@ -2,6 +2,7 @@ import type { DashboardStatsDTO, OrderStatus } from "@vortex/shared";
 import { ORDER_STATUSES } from "@vortex/shared";
 import { AppDataSource } from "../../config/data-source";
 import { Order, User } from "../../entities";
+import { getOrderItemsWithCost } from "./reports.service";
 
 const orderRepo = () => AppDataSource.getRepository(Order);
 const userRepo = () => AppDataSource.getRepository(User);
@@ -30,6 +31,11 @@ export async function getDashboardStats(now: Date = new Date()): Promise<Dashboa
 
   const monthRevenue = monthOrders.reduce((sum, o) => sum + Number(o.total), 0);
   const averageTicket = monthOrders.length ? monthRevenue / monthOrders.length : 0;
+
+  const monthItems = await getOrderItemsWithCost(monthStart, now);
+  const monthItemsRevenue = monthItems.reduce((sum, i) => sum + i.revenue, 0);
+  const monthProfit = monthItems.reduce((sum, i) => sum + (i.revenue - i.cost), 0);
+  const monthMarginPercent = monthItemsRevenue > 0 ? (monthProfit / monthItemsRevenue) * 100 : 0;
 
   const ordersToday = await orderRepo()
     .createQueryBuilder("order")
@@ -76,6 +82,8 @@ export async function getDashboardStats(now: Date = new Date()): Promise<Dashboa
 
   return {
     monthRevenue,
+    monthProfit,
+    monthMarginPercent,
     ordersToday,
     averageTicket,
     activeCustomers,

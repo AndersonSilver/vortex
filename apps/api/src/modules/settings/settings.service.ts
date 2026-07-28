@@ -18,6 +18,11 @@ export function toStoreSettingsDTO(settings: StoreSettings): StoreSettingsDTO {
     notifyNewOrder: settings.notifyNewOrder,
     notifyPaymentConfirmed: settings.notifyPaymentConfirmed,
     notifyLowStock: settings.notifyLowStock,
+    electricityCostPerKwh: Number(settings.electricityCostPerKwh),
+    machineCostPerHour: Number(settings.machineCostPerHour),
+    laborCostPerHour: Number(settings.laborCostPerHour),
+    defaultWasteRatePercent: Number(settings.defaultWasteRatePercent),
+    defaultMarginPercent: Number(settings.defaultMarginPercent),
   };
 }
 

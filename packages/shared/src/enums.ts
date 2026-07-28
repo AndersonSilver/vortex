@@ -58,3 +58,65 @@ export type CouponType = (typeof COUPON_TYPES)[number];
 
 export const CUSTOM_QUOTE_STATUSES = ["pending", "quoted", "rejected"] as const;
 export type CustomQuoteStatus = (typeof CUSTOM_QUOTE_STATUSES)[number];
+
+export const FILAMENT_MATERIALS = [
+  "PLA",
+  "PETG",
+  "ABS",
+  "ABS_PLUS",
+  "TPU",
+  "NYLON",
+  "RESIN",
+  "OUTRO",
+] as const;
+export type FilamentMaterialType = (typeof FILAMENT_MATERIALS)[number];
+
+export const FILAMENT_MATERIAL_LABELS: Record<FilamentMaterialType, string> = {
+  PLA: "PLA",
+  PETG: "PETG",
+  ABS: "ABS",
+  ABS_PLUS: "ABS+",
+  TPU: "TPU",
+  NYLON: "Nylon",
+  RESIN: "Resina",
+  OUTRO: "Outro",
+};
+
+export const FILAMENT_MOVEMENT_TYPES = ["purchase", "consumption", "adjustment", "waste"] as const;
+export type FilamentMovementType = (typeof FILAMENT_MOVEMENT_TYPES)[number];
+
+export const FILAMENT_MOVEMENT_TYPE_LABELS: Record<FilamentMovementType, string> = {
+  purchase: "Compra",
+  consumption: "Consumo",
+  adjustment: "Ajuste",
+  waste: "Perda",
+};
+
+export const PRINTER_STATUSES = ["idle", "printing", "maintenance", "offline"] as const;
+export type PrinterStatus = (typeof PRINTER_STATUSES)[number];
+
+export const PRINTER_STATUS_LABELS: Record<PrinterStatus, string> = {
+  idle: "Ociosa",
+  printing: "Imprimindo",
+  maintenance: "Manutenção",
+  offline: "Offline",
+};
+
+export const PRINT_JOB_STATUSES = ["queued", "printing", "done", "failed"] as const;
+export type PrintJobStatus = (typeof PRINT_JOB_STATUSES)[number];
+
+export const PRINT_JOB_STATUS_LABELS: Record<PrintJobStatus, string> = {
+  queued: "Na fila",
+  printing: "Imprimindo",
+  done: "Concluído",
+  failed: "Falhou",
+};
+
+export const PURCHASE_ORDER_STATUSES = ["pending", "received", "cancelled"] as const;
+export type PurchaseOrderStatus = (typeof PURCHASE_ORDER_STATUSES)[number];
+
+export const PURCHASE_ORDER_STATUS_LABELS: Record<PurchaseOrderStatus, string> = {
+  pending: "Pendente",
+  received: "Recebida",
+  cancelled: "Cancelada",
+};

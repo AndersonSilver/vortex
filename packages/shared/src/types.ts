@@ -1,10 +1,15 @@
 import type {
   CouponType,
   CustomQuoteStatus,
+  FilamentMaterialType,
+  FilamentMovementType,
   OrderStatus,
   PaymentMethod,
   PaymentStatus,
+  PrinterStatus,
+  PrintJobStatus,
   ProductBadge,
+  PurchaseOrderStatus,
   ProductCategoryKey,
   ShippingMethod,
   UserRole,
@@ -33,6 +38,10 @@ export interface ProductDTO {
   reviewsCount: number;
   stock: number;
   active: boolean;
+  filamentId: string | null;
+  weightGrams: number | null;
+  printTimeMinutes: number | null;
+  costPrice: number | null;
 }
 
 export interface AddressDTO {
@@ -82,6 +91,7 @@ export interface OrderItemDTO {
   productId: string;
   name: string;
   price: number;
+  costPrice: number | null;
   qty: number;
   color: string;
   material: string;
@@ -131,11 +141,34 @@ export interface CustomQuoteDTO {
 
 export interface DashboardStatsDTO {
   monthRevenue: number;
+  monthProfit: number;
+  monthMarginPercent: number;
   ordersToday: number;
   averageTicket: number;
   activeCustomers: number;
   salesLast7Days: { label: string; total: number }[];
   statusBreakdown: { status: OrderStatus; count: number }[];
+}
+
+export interface ProductProfitDTO {
+  productId: string;
+  name: string;
+  unitsSold: number;
+  revenue: number;
+  cost: number;
+  profit: number;
+  marginPercent: number;
+}
+
+export interface SalesReportDTO {
+  from: string;
+  to: string;
+  revenue: number;
+  cost: number;
+  profit: number;
+  marginPercent: number;
+  ordersCount: number;
+  byDay: { date: string; label: string; revenue: number; cost: number; profit: number }[];
 }
 
 export interface PaymentResultDTO {
@@ -162,4 +195,111 @@ export interface StoreSettingsDTO {
   notifyNewOrder: boolean;
   notifyPaymentConfirmed: boolean;
   notifyLowStock: boolean;
+  electricityCostPerKwh: number;
+  machineCostPerHour: number;
+  laborCostPerHour: number;
+  defaultWasteRatePercent: number;
+  defaultMarginPercent: number;
+}
+
+export interface FilamentDTO {
+  id: string;
+  brand: string;
+  material: FilamentMaterialType;
+  color: string;
+  colorHex: string | null;
+  spoolWeightGrams: number;
+  remainingWeightGrams: number;
+  costPerSpool: number;
+  lowStockThresholdGrams: number;
+  supplierId: string | null;
+  supplierName: string | null;
+  notes: string | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SupplierDTO {
+  id: string;
+  name: string;
+  contactName: string | null;
+  phone: string | null;
+  email: string | null;
+  notes: string | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PurchaseOrderItemDTO {
+  id: string;
+  filamentId: string;
+  filamentLabel: string;
+  quantityGrams: number;
+  totalCost: number;
+}
+
+export interface PurchaseOrderDTO {
+  id: string;
+  supplierId: string;
+  supplierName: string;
+  status: PurchaseOrderStatus;
+  notes: string | null;
+  receivedAt: string | null;
+  items: PurchaseOrderItemDTO[];
+  totalCost: number;
+  createdAt: string;
+}
+
+export interface FilamentMovementDTO {
+  id: string;
+  filamentId: string;
+  type: FilamentMovementType;
+  changeGrams: number;
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface PrinterDTO {
+  id: string;
+  name: string;
+  model: string | null;
+  status: PrinterStatus;
+  wattage: number;
+  totalPrintHours: number;
+  purchaseCost: number | null;
+  location: string | null;
+  notes: string | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PrinterMaintenanceLogDTO {
+  id: string;
+  printerId: string;
+  description: string;
+  cost: number | null;
+  hoursAtMaintenance: number | null;
+  createdAt: string;
+}
+
+export interface PrintJobDTO {
+  id: string;
+  label: string;
+  printerId: string | null;
+  filamentId: string | null;
+  orderItemId: string | null;
+  customQuoteId: string | null;
+  status: PrintJobStatus;
+  progressPercent: number | null;
+  estimatedMinutes: number | null;
+  actualMinutes: number | null;
+  weightGramsUsed: number | null;
+  notes: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }

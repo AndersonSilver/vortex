@@ -22,6 +22,8 @@ function toOrderItemDTO(item: OrderItem): OrderItemDTO {
     productId: item.productId,
     name: item.nameSnapshot,
     price: Number(item.priceSnapshot),
+    costPrice:
+      item.costPriceSnapshot !== null && item.costPriceSnapshot !== undefined ? Number(item.costPriceSnapshot) : null,
     qty: item.qty,
     color: item.color,
     material: item.material,
@@ -154,6 +156,7 @@ export async function createOrder(userId: string, input: CreateOrderInput): Prom
       productId: item.productId,
       nameSnapshot: item.product.name,
       priceSnapshot: item.product.price,
+      costPriceSnapshot: item.product.costPrice ?? null,
       qty: item.qty,
       color: item.color,
       material: item.material,

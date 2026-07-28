@@ -19,6 +19,12 @@ import { AdminCouponsPage } from "./pages/admin/AdminCouponsPage";
 import { AdminCustomersPage } from "./pages/admin/AdminCustomersPage";
 import { AdminQuotesPage } from "./pages/admin/AdminQuotesPage";
 import { AdminSettingsPage } from "./pages/admin/AdminSettingsPage";
+import { AdminFilamentsPage } from "./pages/admin/AdminFilamentsPage";
+import { AdminPricingCalculatorPage } from "./pages/admin/AdminPricingCalculatorPage";
+import { AdminProductionPage } from "./pages/admin/AdminProductionPage";
+import { AdminFinancialReportsPage } from "./pages/admin/AdminFinancialReportsPage";
+import { AdminSuppliersPage } from "./pages/admin/AdminSuppliersPage";
+import { AdminPurchaseOrdersPage } from "./pages/admin/AdminPurchaseOrdersPage";
 
 function StorefrontLayout() {
   return (
@@ -88,6 +94,12 @@ export function App() {
           <Route path="cupons" element={<AdminCouponsPage />} />
           <Route path="clientes" element={<AdminCustomersPage />} />
           <Route path="orcamentos" element={<AdminQuotesPage />} />
+          <Route path="estoque" element={<AdminFilamentsPage />} />
+          <Route path="fornecedores" element={<AdminSuppliersPage />} />
+          <Route path="compras" element={<AdminPurchaseOrdersPage />} />
+          <Route path="producao" element={<AdminProductionPage />} />
+          <Route path="precificacao" element={<AdminPricingCalculatorPage />} />
+          <Route path="financeiro" element={<AdminFinancialReportsPage />} />
           <Route path="configuracoes" element={<AdminSettingsPage />} />
         </Route>
       </Routes>

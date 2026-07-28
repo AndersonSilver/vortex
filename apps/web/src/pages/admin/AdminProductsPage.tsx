@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { PRODUCT_CATEGORIES, type ProductDTO, type ProductCategoryKey, type ProductBadge } from "@vortex/shared";
 import {
   useCreateProduct,
@@ -7,6 +8,7 @@ import {
   useToggleProductActive,
   useUpdateProduct,
 } from "../../hooks/useProducts";
+import { useFilaments } from "../../hooks/useFilaments";
 import { useUploadProductImage, useUploadProductVideo } from "../../hooks/useMedia";
 import { categoryLabel } from "../../components/ProductCard";
 import { Modal } from "../../components/Modal";
@@ -25,6 +27,9 @@ interface ProductFormState {
   material: string;
   imageUrl: string | null;
   videoUrl: string | null;
+  filamentId: string;
+  weightGrams: string;
+  printTimeMinutes: string;
 }
 
 const EMPTY_FORM: ProductFormState = {
@@ -38,10 +43,15 @@ const EMPTY_FORM: ProductFormState = {
   material: MATERIAL_OPTIONS[0],
   imageUrl: null,
   videoUrl: null,
+  filamentId: "",
+  weightGrams: "",
+  printTimeMinutes: "",
 };
 
 export function AdminProductsPage() {
+  const navigate = useNavigate();
   const { data: products = [], isLoading } = useProducts("all", true);
+  const { data: filaments = [] } = useFilaments();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deactivateProduct = useDeactivateProduct();
@@ -76,6 +86,9 @@ export function AdminProductsPage() {
       material: product.material,
       imageUrl: product.imageUrl,
       videoUrl: product.videoUrl,
+      filamentId: product.filamentId ?? "",
+      weightGrams: product.weightGrams ? String(product.weightGrams) : "",
+      printTimeMinutes: product.printTimeMinutes ? String(product.printTimeMinutes) : "",
     });
     setModalOpen(true);
   }
@@ -117,6 +130,10 @@ export function AdminProductsPage() {
       specs: editing?.specs ?? {},
       stock: editing?.stock ?? 20,
       active: editing?.active ?? true,
+      filamentId: form.filamentId || null,
+      weightGrams: form.weightGrams ? parseFloat(form.weightGrams) : null,
+      printTimeMinutes: form.printTimeMinutes ? parseInt(form.printTimeMinutes, 10) : null,
+      costPrice: editing?.costPrice ?? null,
     };
     const mutation = editing ? updateProduct.mutateAsync({ id: editing.id, input }) : createProduct.mutateAsync(input);
     mutation
@@ -157,6 +174,7 @@ export function AdminProductsPage() {
               <th>Categoria</th>
               <th>Material</th>
               <th>Preço</th>
+              <th>Margem</th>
               <th>Estoque</th>
               <th>Status</th>
               <th>Ações</th>
@@ -165,7 +183,7 @@ export function AdminProductsPage() {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={7} style={{ color: "var(--text-muted)" }}>
+                <td colSpan={8} style={{ color: "var(--text-muted)" }}>
                   Carregando...
                 </td>
               </tr>
@@ -197,6 +215,18 @@ export function AdminProductsPage() {
                       </>
                     )}
                   </td>
+                  <td style={{ fontSize: ".82rem" }}>
+                    {p.costPrice ? (
+                      <>
+                        <div style={{ color: "var(--text-muted)" }}>Custo: R$ {p.costPrice.toFixed(2)}</div>
+                        <div style={{ color: p.price - p.costPrice >= 0 ? "var(--success)" : "var(--danger)" }}>
+                          {(((p.price - p.costPrice) / p.price) * 100).toFixed(0)}% margem
+                        </div>
+                      </>
+                    ) : (
+                      <span style={{ color: "var(--text-muted)" }}>—</span>
+                    )}
+                  </td>
                   <td>
                     <span style={{ color: p.stock > 0 ? "var(--success)" : "var(--danger)" }}>
                       ● {p.stock > 0 ? `${p.stock} em estoque` : "Sem estoque"}
@@ -210,6 +240,9 @@ export function AdminProductsPage() {
                   <td>
                     <button className="action-btn" onClick={() => openEdit(p)}>
                       ✏️ Editar
+                    </button>
+                    <button className="action-btn" onClick={() => navigate(`/admin/precificacao?productId=${p.id}`)}>
+                      🧮 Calcular preço
                     </button>
                     {p.active ? (
                       <button className="action-btn danger" onClick={() => handleDeactivate(p.id)}>
@@ -305,6 +338,41 @@ export function AdminProductsPage() {
               <option value="hot">Hot</option>
               <option value="sale">Sale</option>
             </select>
+          </div>
+          <div className="form-group">
+            <label>Filamento usado</label>
+            <select
+              className="admin-select"
+              value={form.filamentId}
+              onChange={(e) => setForm({ ...form, filamentId: e.target.value })}
+            >
+              <option value="">Nenhum</option>
+              {filaments.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.brand} · {f.color}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Peso por unidade (g)</label>
+            <input
+              className="admin-input"
+              type="number"
+              value={form.weightGrams}
+              onChange={(e) => setForm({ ...form, weightGrams: e.target.value })}
+              placeholder="Opcional"
+            />
+          </div>
+          <div className="form-group">
+            <label>Tempo de impressão (min)</label>
+            <input
+              className="admin-input"
+              type="number"
+              value={form.printTimeMinutes}
+              onChange={(e) => setForm({ ...form, printTimeMinutes: e.target.value })}
+              placeholder="Opcional"
+            />
           </div>
         </div>
 

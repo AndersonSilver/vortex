@@ -3,10 +3,13 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
 import type { ProductBadge, ProductCategoryKey, ProductSpecs } from "@vortex/shared";
+import { Filament } from "./Filament";
 
 @Entity({ name: "products" })
 export class Product {
@@ -64,6 +67,22 @@ export class Product {
 
   @Column({ type: "boolean", default: true })
   active!: boolean;
+
+  @ManyToOne(() => Filament, { onDelete: "SET NULL", nullable: true })
+  @JoinColumn({ name: "filament_id" })
+  filament?: Filament | null;
+
+  @Column({ name: "filament_id", type: "uuid", nullable: true })
+  filamentId?: string | null;
+
+  @Column({ name: "weight_grams", type: "int", nullable: true })
+  weightGrams?: number | null;
+
+  @Column({ name: "print_time_minutes", type: "int", nullable: true })
+  printTimeMinutes?: number | null;
+
+  @Column({ name: "cost_price", type: "numeric", precision: 10, scale: 2, nullable: true })
+  costPrice?: number | null;
 
   @CreateDateColumn({ name: "created_at" })
   createdAt!: Date;

@@ -28,6 +28,9 @@ export class OrderItem {
   @Column({ name: "price_snapshot", type: "numeric", precision: 10, scale: 2 })
   priceSnapshot!: number;
 
+  @Column({ name: "cost_price_snapshot", type: "numeric", precision: 10, scale: 2, nullable: true })
+  costPriceSnapshot?: number | null;
+
   @Column({ type: "int" })
   qty!: number;
 

@@ -30,6 +30,10 @@ export function toProductDTO(product: Product): ProductDTO {
     reviewsCount: product.reviewsCount,
     stock: product.stock,
     active: product.active,
+    filamentId: product.filamentId ?? null,
+    weightGrams: product.weightGrams ?? null,
+    printTimeMinutes: product.printTimeMinutes ?? null,
+    costPrice: product.costPrice !== null && product.costPrice !== undefined ? Number(product.costPrice) : null,
   };
 }
 

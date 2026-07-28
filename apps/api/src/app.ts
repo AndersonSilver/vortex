@@ -15,6 +15,11 @@ import { quotesRouter } from "./modules/quotes/quotes.routes";
 import { mediaRouter } from "./modules/media/media.routes";
 import { adminRouter } from "./modules/admin/admin.routes";
 import { settingsRouter } from "./modules/settings/settings.routes";
+import { filamentsRouter } from "./modules/filaments/filaments.routes";
+import { printersRouter } from "./modules/printers/printers.routes";
+import { printJobsRouter } from "./modules/print-jobs/print-jobs.routes";
+import { suppliersRouter } from "./modules/suppliers/suppliers.routes";
+import { purchaseOrdersRouter } from "./modules/purchase-orders/purchase-orders.routes";
 
 export function createApp() {
   const app = express();
@@ -48,6 +53,11 @@ export function createApp() {
   app.use("/media", mediaRouter);
   app.use("/admin", adminRouter);
   app.use("/settings", settingsRouter);
+  app.use("/filaments", filamentsRouter);
+  app.use("/printers", printersRouter);
+  app.use("/print-jobs", printJobsRouter);
+  app.use("/suppliers", suppliersRouter);
+  app.use("/purchase-orders", purchaseOrdersRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

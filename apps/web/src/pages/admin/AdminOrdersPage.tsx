@@ -144,8 +144,13 @@ export function AdminOrdersPage() {
       </div>
 
       <Modal open={!!viewOrder} onClose={() => setViewOrder(null)} title={`Pedido ${viewOrder?.orderNumber ?? ""}`}>
-        {viewOrder && (
-          <>
+        {viewOrder &&
+          (() => {
+            const revenue = viewOrder.items.reduce((sum, i) => sum + i.price * i.qty, 0);
+            const cost = viewOrder.items.reduce((sum, i) => sum + (i.costPrice ?? 0) * i.qty, 0);
+            const profit = revenue - cost;
+            return (
+              <>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
               <div>
                 <div style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Cliente</div>
@@ -171,6 +176,18 @@ export function AdminOrdersPage() {
                 <div style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Total</div>
                 <div style={{ fontFamily: "Orbitron, monospace", color: "var(--purple)", fontWeight: 700 }}>
                   R$ {viewOrder.total.toFixed(2)}
+                </div>
+              </div>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <div style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Lucro (itens do pedido)</div>
+                <div style={{ color: profit >= 0 ? "var(--success)" : "var(--danger)", fontWeight: 700 }}>
+                  R$ {profit.toFixed(2)}
+                  {revenue > 0 && (
+                    <span style={{ color: "var(--text-muted)", fontWeight: 400, fontSize: ".8rem" }}>
+                      {" "}
+                      ({((profit / revenue) * 100).toFixed(0)}% margem)
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -205,8 +222,9 @@ export function AdminOrdersPage() {
             <button className="btn-primary" style={{ width: "100%", marginTop: "1rem" }} onClick={() => setViewOrder(null)}>
               Fechar
             </button>
-          </>
-        )}
+              </>
+            );
+          })()}
       </Modal>
     </div>
   );
