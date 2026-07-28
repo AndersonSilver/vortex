@@ -1,12 +1,18 @@
 import { useNavigate } from "react-router-dom";
 import { useCart, useRemoveCartItem, useUpdateCartItem } from "../hooks/useCart";
+import { useProducts } from "../hooks/useProducts";
 import { OrderSummary } from "../components/OrderSummary";
+import { ProductCard } from "../components/ProductCard";
 
 export function CartPage() {
   const navigate = useNavigate();
   const { data: items = [], isLoading } = useCart();
+  const { data: allProducts = [] } = useProducts();
   const updateItem = useUpdateCartItem();
   const removeItem = useRemoveCartItem();
+
+  const cartProductIds = new Set(items.map((item) => item.product.id));
+  const recommended = allProducts.filter((product) => !cartProductIds.has(product.id)).slice(0, 4);
 
   if (isLoading) {
     return (
@@ -102,6 +108,19 @@ export function CartPage() {
                 items={items}
                 checkoutAction={{ label: "Finalizar Compra →", onClick: () => navigate("/checkout") }}
               />
+            </div>
+          </div>
+        )}
+        {recommended.length > 0 && (
+          <div className="cart-recommendations">
+            <div className="cart-recommendations-title">
+              <span className="section-tag">Continue explorando</span>
+              <h2>Você também pode gostar</h2>
+            </div>
+            <div className="product-grid">
+              {recommended.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
             </div>
           </div>
         )}
