@@ -8,10 +8,16 @@ function required(name: string, fallback?: string): string {
   return value;
 }
 
+const webOrigins = (process.env.WEB_ORIGIN ?? "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   apiPort: Number(process.env.API_PORT ?? 3333),
-  webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:5173",
+  webOrigin: webOrigins[0],
+  webOrigins,
   databaseUrl: required("DATABASE_URL", "postgres://vortex:vortex@localhost:5432/vortex"),
 
   jwt: {

@@ -19,7 +19,18 @@ import { settingsRouter } from "./modules/settings/settings.routes";
 export function createApp() {
   const app = express();
 
-  app.use(cors({ origin: env.webOrigin, credentials: true }));
+  app.use(
+    cors({
+      origin(origin, callback) {
+        if (!origin || env.webOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
+      credentials: true,
+    }),
+  );
   app.use(express.json());
 
   app.get("/health", (_req, res) => res.json({ status: "ok" }));
