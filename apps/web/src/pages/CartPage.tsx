@@ -42,13 +42,24 @@ export function CartPage() {
               <div>
                 {items.map((item) => (
                   <div className="cart-item" key={item.id}>
-                    <div className="cart-item-img">{item.product.emoji}</div>
+                    <div className="cart-item-img">
+                      {item.product.imageUrl ? (
+                        <img src={item.product.imageUrl} alt={item.product.name} />
+                      ) : (
+                        item.product.emoji
+                      )}
+                    </div>
                     <div className="cart-item-info">
                       <div className="cart-item-name">{item.product.name}</div>
                       <div className="cart-item-meta">
                         Cor: {item.color} · Material: {item.material}
                       </div>
-                      <div className="cart-item-price">R$ {(item.product.price * item.qty).toFixed(2)}</div>
+                      <div className="cart-item-price">
+                        R$ {(item.product.price * item.qty).toFixed(2)}
+                        {item.qty > 1 && (
+                          <span className="cart-item-unit-price"> (R$ {item.product.price.toFixed(2)}/un)</span>
+                        )}
+                      </div>
                     </div>
                     <div className="cart-item-actions">
                       <button className="btn-remove" onClick={() => removeItem.mutate(item.id)}>
