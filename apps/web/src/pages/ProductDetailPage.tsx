@@ -28,6 +28,7 @@ export function ProductDetailPage() {
   const [color, setColor] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const [cep, setCep] = useState("");
+  const [activeImage, setActiveImage] = useState(0);
 
   if (isLoading) {
     return (
@@ -51,6 +52,7 @@ export function ProductDetailPage() {
 
   const selectedColor = color ?? product.colors[0];
   const related = allProducts.filter((p) => p.id !== product.id).slice(0, 4);
+  const gallery = product.images.length > 0 ? product.images : product.imageUrl ? [product.imageUrl] : [];
 
   function handleCheckShipping() {
     const digits = cep.replace(/\D/g, "");
@@ -87,9 +89,9 @@ export function ProductDetailPage() {
         <div className="detail-grid">
           <div>
             <div className="detail-img">
-              {product.imageUrl ? (
+              {gallery.length > 0 ? (
                 <img
-                  src={product.imageUrl}
+                  src={gallery[activeImage] ?? gallery[0]}
                   alt={product.name}
                   style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
                 />
@@ -97,6 +99,28 @@ export function ProductDetailPage() {
                 product.emoji
               )}
             </div>
+            {gallery.length > 1 && (
+              <div style={{ display: "flex", gap: ".6rem", marginTop: ".8rem" }}>
+                {gallery.map((url, index) => (
+                  <button
+                    key={url + index}
+                    onClick={() => setActiveImage(index)}
+                    style={{
+                      width: "64px",
+                      height: "64px",
+                      padding: 0,
+                      borderRadius: "8px",
+                      overflow: "hidden",
+                      cursor: "pointer",
+                      background: "var(--bg2)",
+                      border: index === activeImage ? "2px solid var(--purple)" : "1px solid var(--border)",
+                    }}
+                  >
+                    <img src={url} alt={`${product.name} ${index + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  </button>
+                ))}
+              </div>
+            )}
             {product.videoUrl && (
               <video
                 src={product.videoUrl}

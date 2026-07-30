@@ -47,6 +47,7 @@ export const productSchema = z.object({
   oldPrice: z.number().positive().nullable().optional(),
   emoji: z.string().min(1).max(8).default("📦"),
   imageUrl: z.string().url().nullable().optional(),
+  images: z.array(z.string().url()).max(5).default([]),
   videoUrl: z.string().url().nullable().optional(),
   badge: z.enum(PRODUCT_BADGES).nullable().optional(),
   colors: z.array(z.string()).default([]),

@@ -21,6 +21,7 @@ export function toProductDTO(product: Product): ProductDTO {
     oldPrice: product.oldPrice !== null && product.oldPrice !== undefined ? Number(product.oldPrice) : null,
     emoji: product.emoji,
     imageUrl: product.imageUrl ?? null,
+    images: product.images ?? [],
     videoUrl: product.videoUrl ?? null,
     badge: product.badge ?? null,
     colors: product.colors,
@@ -91,7 +92,8 @@ productsRouter.post(
       slug = `${baseSlug}-${++suffix}`;
     }
     const body = req.body as ProductInput;
-    const product = await productRepo().save(productRepo().create({ ...body, slug }));
+    const imageUrl = body.images.length > 0 ? body.images[0] : (body.imageUrl ?? null);
+    const product = await productRepo().save(productRepo().create({ ...body, imageUrl, slug }));
     res.status(201).json(toProductDTO(product));
   }),
 );
@@ -106,7 +108,9 @@ productsRouter.put(
     if (!product) {
       throw new HttpError(404, "Produto não encontrado.");
     }
-    Object.assign(product, req.body);
+    const body = req.body as ProductInput;
+    const imageUrl = body.images.length > 0 ? body.images[0] : (body.imageUrl ?? null);
+    Object.assign(product, body, { imageUrl });
     await productRepo().save(product);
     res.json(toProductDTO(product));
   }),

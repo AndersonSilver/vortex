@@ -83,6 +83,7 @@ export function AdminPricingCalculatorPage() {
       oldPrice: product.oldPrice,
       emoji: product.emoji,
       imageUrl: product.imageUrl,
+      images: product.images,
       videoUrl: product.videoUrl,
       badge: product.badge,
       colors: product.colors,

@@ -41,6 +41,9 @@ export class Product {
   @Column({ name: "image_url", type: "varchar", nullable: true })
   imageUrl?: string | null;
 
+  @Column({ type: "jsonb", default: () => "'[]'" })
+  images!: string[];
+
   @Column({ name: "video_url", type: "varchar", nullable: true })
   videoUrl?: string | null;
 

@@ -29,6 +29,7 @@ export interface ProductDTO {
   oldPrice: number | null;
   emoji: string;
   imageUrl: string | null;
+  images: string[];
   videoUrl: string | null;
   badge: ProductBadge | null;
   colors: string[];

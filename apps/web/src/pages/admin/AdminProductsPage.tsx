@@ -15,6 +15,7 @@ import { Modal } from "../../components/Modal";
 import { useToast } from "../../components/Toast";
 
 const MATERIAL_OPTIONS = ["PLA", "PETG", "ABS", "Resina", "Nylon", "TPU", "Conforme projeto"];
+const MAX_PRODUCT_IMAGES = 5;
 
 interface ProductFormState {
   name: string;
@@ -25,7 +26,7 @@ interface ProductFormState {
   badge: ProductBadge | "";
   description: string;
   material: string;
-  imageUrl: string | null;
+  images: string[];
   videoUrl: string | null;
   filamentId: string;
   weightGrams: string;
@@ -41,7 +42,7 @@ const EMPTY_FORM: ProductFormState = {
   badge: "",
   description: "",
   material: MATERIAL_OPTIONS[0],
-  imageUrl: null,
+  images: [],
   videoUrl: null,
   filamentId: "",
   weightGrams: "",
@@ -84,7 +85,7 @@ export function AdminProductsPage() {
       badge: product.badge ?? "",
       description: product.description,
       material: product.material,
-      imageUrl: product.imageUrl,
+      images: product.images.length > 0 ? product.images : product.imageUrl ? [product.imageUrl] : [],
       videoUrl: product.videoUrl,
       filamentId: product.filamentId ?? "",
       weightGrams: product.weightGrams ? String(product.weightGrams) : "",
@@ -95,10 +96,18 @@ export function AdminProductsPage() {
 
   function handleImageSelected(file: File | undefined) {
     if (!file) return;
+    if (form.images.length >= MAX_PRODUCT_IMAGES) {
+      showToast(`Máximo de ${MAX_PRODUCT_IMAGES} fotos por produto.`, "error");
+      return;
+    }
     uploadImage.mutate(file, {
-      onSuccess: (url) => setForm((f) => ({ ...f, imageUrl: url })),
+      onSuccess: (url) => setForm((f) => ({ ...f, images: [...f.images, url].slice(0, MAX_PRODUCT_IMAGES) })),
       onError: () => showToast("Não foi possível enviar a foto.", "error"),
     });
+  }
+
+  function handleRemoveImage(index: number) {
+    setForm((f) => ({ ...f, images: f.images.filter((_, i) => i !== index) }));
   }
 
   function handleVideoSelected(file: File | undefined) {
@@ -124,7 +133,7 @@ export function AdminProductsPage() {
       badge: form.badge || null,
       description: form.description,
       material: form.material,
-      imageUrl: form.imageUrl,
+      images: form.images,
       videoUrl: form.videoUrl,
       colors: editing?.colors ?? ["Branco", "Preto"],
       specs: editing?.specs ?? {},
@@ -378,43 +387,68 @@ export function AdminProductsPage() {
 
         <div className="form-grid" style={{ gap: ".8rem", marginTop: ".8rem" }}>
           <div className="form-group">
-            <label>Foto do produto</label>
-            <div
-              className="upload-zone"
-              style={{ padding: "1rem" }}
-              onClick={() => imageInputRef.current?.click()}
-            >
-              {form.imageUrl ? (
-                <>
+            <label>
+              Fotos do produto ({form.images.length}/{MAX_PRODUCT_IMAGES})
+            </label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: ".6rem" }}>
+              {form.images.map((url, index) => (
+                <div key={url + index} style={{ position: "relative" }}>
                   <img
-                    src={form.imageUrl}
-                    alt="Prévia"
+                    src={url}
+                    alt={`Foto ${index + 1}`}
                     style={{
                       width: "80px",
                       height: "80px",
                       objectFit: "cover",
                       borderRadius: "8px",
                       background: "var(--bg2)",
-                      border: "1px solid var(--border)",
+                      border: index === 0 ? "2px solid var(--purple)" : "1px solid var(--border)",
                     }}
                   />
-                  <div className="upload-text" style={{ marginTop: ".5rem" }}>
-                    {uploadImage.isPending ? "Enviando..." : "Clique para trocar a foto"}
+                  <button
+                    type="button"
+                    className="action-btn danger"
+                    onClick={() => handleRemoveImage(index)}
+                    style={{
+                      position: "absolute",
+                      top: "-8px",
+                      right: "-8px",
+                      width: "22px",
+                      height: "22px",
+                      padding: 0,
+                      borderRadius: "50%",
+                      lineHeight: 1,
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {form.images.length < MAX_PRODUCT_IMAGES && (
+                <div
+                  className="upload-zone"
+                  style={{ padding: "1rem", width: "80px", height: "80px", boxSizing: "border-box" }}
+                  onClick={() => imageInputRef.current?.click()}
+                >
+                  <div className="upload-text" style={{ fontSize: ".72rem" }}>
+                    {uploadImage.isPending ? "Enviando..." : "+ Adicionar"}
                   </div>
-                </>
-              ) : (
-                <div className="upload-text">
-                  {uploadImage.isPending ? "Enviando..." : "Clique para enviar uma foto"}
                 </div>
               )}
-              <input
-                ref={imageInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => handleImageSelected(e.target.files?.[0])}
-              />
             </div>
+            <div className="upload-text" style={{ fontSize: ".72rem", marginTop: ".4rem" }}>
+              A primeira foto é usada como capa do produto.
+            </div>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                handleImageSelected(e.target.files?.[0]);
+                e.target.value = "";
+              }}
+            />
           </div>
           <div className="form-group">
             <label>Vídeo do produto</label>
