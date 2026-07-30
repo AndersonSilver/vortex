@@ -1,21 +1,33 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useProduct } from "../hooks/useProducts";
-import { categoryLabel } from "../components/ProductCard";
+import type { ShippingMethod } from "@vortex/shared";
+import { useProduct, useProducts } from "../hooks/useProducts";
+import { ProductCard, categoryLabel } from "../components/ProductCard";
 import { useAddToCart } from "../hooks/useCart";
+import { useShippingQuote } from "../hooks/useShipping";
 import { useToast } from "../components/Toast";
 import { useAuthStore } from "../state/auth-store";
+import { extractErrorMessage } from "../lib/api-client";
+
+const SHIPPING_LABELS: Record<ShippingMethod, { icon: string; title: string }> = {
+  pac: { icon: "📦", title: "PAC" },
+  sedex: { icon: "⚡", title: "SEDEX" },
+  pickup: { icon: "🏠", title: "Retirada no local" },
+};
 
 export function ProductDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { data: product, isLoading } = useProduct(slug);
+  const { data: allProducts = [] } = useProducts();
   const addToCart = useAddToCart();
+  const shippingQuote = useShippingQuote();
   const { showToast } = useToast();
   const accessToken = useAuthStore((s) => s.accessToken);
 
   const [color, setColor] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
+  const [cep, setCep] = useState("");
 
   if (isLoading) {
     return (
@@ -38,6 +50,18 @@ export function ProductDetailPage() {
   }
 
   const selectedColor = color ?? product.colors[0];
+  const related = allProducts.filter((p) => p.id !== product.id).slice(0, 4);
+
+  function handleCheckShipping() {
+    const digits = cep.replace(/\D/g, "");
+    if (digits.length !== 8) {
+      showToast("Informe um CEP válido.", "error");
+      return;
+    }
+    shippingQuote.mutate(digits, {
+      onError: (error) => showToast(extractErrorMessage(error, "Não foi possível calcular o frete."), "error"),
+    });
+  }
 
   function handleAddToCart() {
     if (!accessToken) {
@@ -129,6 +153,42 @@ export function ProductDetailPage() {
               </div>
               <span style={{ fontSize: ".85rem", color: "var(--success)" }}>✓ Em estoque</span>
             </div>
+            <div className="form-group" style={{ maxWidth: "360px" }}>
+              <label>📍 Calcular frete</label>
+              <div style={{ display: "flex", gap: ".6rem" }}>
+                <input
+                  value={cep}
+                  onChange={(e) => setCep(e.target.value)}
+                  placeholder="00000-000"
+                  maxLength={9}
+                  onKeyDown={(e) => e.key === "Enter" && handleCheckShipping()}
+                />
+                <button
+                  className="btn-outline"
+                  style={{ whiteSpace: "nowrap" }}
+                  onClick={handleCheckShipping}
+                  disabled={shippingQuote.isPending}
+                >
+                  {shippingQuote.isPending ? "Calculando..." : "Calcular"}
+                </button>
+              </div>
+              {shippingQuote.data && (
+                <div style={{ display: "flex", gap: ".6rem", marginTop: ".6rem" }}>
+                  {shippingQuote.data.map((option) => (
+                    <div key={option.method} className="pay-method" style={{ flex: 1, cursor: "default" }}>
+                      <span className="pay-method-icon">{SHIPPING_LABELS[option.method].icon}</span>
+                      <span className="pay-method-label">
+                        {SHIPPING_LABELS[option.method].title}
+                        <br />
+                        <small>
+                          {option.price === 0 ? "Grátis" : `R$ ${option.price.toFixed(2)}`} · {option.estimatedDays}d
+                        </small>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="detail-actions">
               <button className="btn-add-cart" onClick={handleAddToCart} disabled={addToCart.isPending}>
                 🛒 Adicionar ao Carrinho
@@ -159,6 +219,19 @@ export function ProductDetailPage() {
             </div>
           </div>
         </div>
+        {related.length > 0 && (
+          <div className="cart-recommendations">
+            <div className="cart-recommendations-title">
+              <span className="section-tag">Continue explorando</span>
+              <h2>Você também pode gostar</h2>
+            </div>
+            <div className="product-grid">
+              {related.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
