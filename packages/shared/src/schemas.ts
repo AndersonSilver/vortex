@@ -3,7 +3,9 @@ import {
   COUPON_TYPES,
   FILAMENT_MATERIALS,
   FILAMENT_MOVEMENT_TYPES,
+  ORDER_STATUSES,
   PAYMENT_METHODS,
+  PAYMENT_STATUSES,
   PRINT_JOB_STATUSES,
   PRODUCT_BADGES,
   PRODUCT_CATEGORIES,
@@ -104,6 +106,33 @@ export const createOrderSchema = z.object({
   couponCode: z.string().optional(),
 });
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
+
+export const manualOrderItemSchema = z.object({
+  productId: z.string().uuid(),
+  qty: z.number().int().positive(),
+  color: z.string().min(1),
+  material: z.string().min(1),
+});
+
+export const createManualOrderSchema = z
+  .object({
+    customerName: z.string().min(1).max(160),
+    customerEmail: z.string().email().optional(),
+    customerPhone: z.string().min(8).max(20).optional(),
+    address: addressSchema,
+    items: z.array(manualOrderItemSchema).min(1),
+    shippingMethod: z.enum(SHIPPING_METHODS),
+    shippingCost: z.number().min(0).default(0),
+    discount: z.number().min(0).default(0),
+    paymentMethod: z.enum(PAYMENT_METHODS),
+    paymentStatus: z.enum(PAYMENT_STATUSES).default("pending"),
+    status: z.enum(ORDER_STATUSES).default("pending"),
+  })
+  .refine((data) => !!data.customerEmail || !!data.customerPhone, {
+    message: "Informe e-mail ou telefone do cliente.",
+    path: ["customerPhone"],
+  });
+export type CreateManualOrderInput = z.infer<typeof createManualOrderSchema>;
 
 export const customQuoteSchema = z.object({
   material: z.string().min(1),

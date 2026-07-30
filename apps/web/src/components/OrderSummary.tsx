@@ -46,14 +46,20 @@ export function OrderSummary({ items, shippingCost, shippingLabel, checkoutActio
   return (
     <div className="order-summary">
       <h3>Resumo do Pedido</h3>
-      {items.map((item) => (
-        <div className="summary-row" key={item.id} style={{ fontSize: ".82rem" }}>
-          <span>
-            {item.product.name} x{item.qty}
-          </span>
-          <span>R$ {(item.product.price * item.qty).toFixed(2)}</span>
-        </div>
-      ))}
+      <div className="summary-items">
+        {items.map((item) => (
+          <div className="summary-item" key={item.id}>
+            <div className="summary-item-thumb">
+              {item.product.imageUrl ? <img src={item.product.imageUrl} alt={item.product.name} /> : item.product.emoji}
+            </div>
+            <div className="summary-item-info">
+              <span className="summary-item-name">{item.product.name}</span>
+              <span className="summary-item-qty">Qtd: {item.qty}</span>
+            </div>
+            <span className="summary-item-price">R$ {(item.product.price * item.qty).toFixed(2)}</span>
+          </div>
+        ))}
+      </div>
       <hr style={{ border: "none", borderTop: "1px solid var(--border)", margin: ".5rem 0" }} />
       <div className="summary-row">
         <span>Subtotal</span>

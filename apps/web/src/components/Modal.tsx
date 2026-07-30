@@ -5,9 +5,10 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
+  size?: "default" | "lg";
 }
 
-export function Modal({ open, onClose, title, children }: ModalProps) {
+export function Modal({ open, onClose, title, children, size = "default" }: ModalProps) {
   if (!open) return null;
   return (
     <div
@@ -16,7 +17,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="modal">
+      <div className={`modal${size === "lg" ? " modal-lg" : ""}`}>
         <button className="modal-close" onClick={onClose}>
           ✕
         </button>

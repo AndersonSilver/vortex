@@ -27,3 +27,14 @@ export function useCreateAddress() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ADDRESSES_KEY }),
   });
 }
+
+export function useUpdateAddress() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...input }: AddressInput & { id: string }) => {
+      const { data } = await api.put<AddressDTO>(`/addresses/${id}`, input);
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ADDRESSES_KEY }),
+  });
+}

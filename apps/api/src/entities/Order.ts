@@ -37,8 +37,14 @@ export class Order {
   @Column({ name: "customer_name", type: "varchar" })
   customerName!: string;
 
-  @Column({ name: "customer_email", type: "varchar" })
-  customerEmail!: string;
+  @Column({ name: "customer_email", type: "varchar", nullable: true })
+  customerEmail?: string | null;
+
+  @Column({ name: "customer_phone", type: "varchar", nullable: true })
+  customerPhone?: string | null;
+
+  @Column({ name: "is_manual", type: "boolean", default: false })
+  isManual!: boolean;
 
   @Column({ type: "varchar", default: "pending" })
   status!: OrderStatus;

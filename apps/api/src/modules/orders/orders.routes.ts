@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { createOrderSchema, updateOrderStatusSchema, updateOrderTrackingSchema } from "@vortex/shared";
+import {
+  createManualOrderSchema,
+  createOrderSchema,
+  updateOrderStatusSchema,
+  updateOrderTrackingSchema,
+} from "@vortex/shared";
 import { requireAuth, requireRole } from "../../middleware/auth";
 import { validateBody } from "../../middleware/validate";
 import { asyncHandler } from "../../utils/async-handler";
@@ -13,6 +18,16 @@ ordersRouter.post(
   validateBody(createOrderSchema),
   asyncHandler(async (req, res) => {
     const order = await ordersService.createOrder(req.auth!.userId, req.body);
+    res.status(201).json(order);
+  }),
+);
+
+ordersRouter.post(
+  "/manual",
+  requireRole("admin"),
+  validateBody(createManualOrderSchema),
+  asyncHandler(async (req, res) => {
+    const order = await ordersService.createManualOrder(req.body);
     res.status(201).json(order);
   }),
 );

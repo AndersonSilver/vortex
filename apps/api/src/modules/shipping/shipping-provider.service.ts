@@ -83,6 +83,7 @@ export async function quoteShipping(
           price: Number(pac.price),
           estimatedDays: pac.delivery_time,
           source: "correios",
+          carrier: pac.company?.name ?? "Correios",
         }
       : {
           method: "pac",
@@ -90,6 +91,7 @@ export async function quoteShipping(
           price: env.shipping.fallback.pacPrice,
           estimatedDays: env.shipping.fallback.pacDays,
           source: "fallback",
+          carrier: "Correios",
         },
     sedex
       ? {
@@ -98,6 +100,7 @@ export async function quoteShipping(
           price: Number(sedex.price),
           estimatedDays: sedex.delivery_time,
           source: "correios",
+          carrier: sedex.company?.name ?? "Correios",
         }
       : {
           method: "sedex",
@@ -105,8 +108,16 @@ export async function quoteShipping(
           price: env.shipping.fallback.sedexPrice,
           estimatedDays: env.shipping.fallback.sedexDays,
           source: "fallback",
+          carrier: "Correios",
         },
-    { method: "pickup", label: "Retirada no local", price: 0, estimatedDays: 0, source: "pickup" },
+    {
+      method: "pickup",
+      label: "Retirada no local",
+      price: 0,
+      estimatedDays: 0,
+      source: "pickup",
+      carrier: "Retirada na loja",
+    },
   ];
 
   return options;

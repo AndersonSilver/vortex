@@ -27,56 +27,103 @@ export function AccountPage() {
           ) : orders.length === 0 ? (
             <p style={{ padding: "1.5rem", color: "var(--text-muted)" }}>Você ainda não fez nenhum pedido.</p>
           ) : (
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Pedido</th>
-                  <th>Itens</th>
-                  <th>Valor</th>
-                  <th>Data</th>
-                  <th>Status</th>
-                  <th>Rastreio</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
+            <>
+              <table className="admin-table orders-table">
+                <thead>
+                  <tr>
+                    <th>Pedido</th>
+                    <th>Itens</th>
+                    <th>Valor</th>
+                    <th>Data</th>
+                    <th>Status</th>
+                    <th>Rastreio</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.map((order) => (
+                    <tr key={order.id}>
+                      <td style={{ fontFamily: "Orbitron, monospace", color: "var(--purple)" }}>{order.orderNumber}</td>
+                      <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>
+                        {order.items.map((i) => `${i.name} x${i.qty}`).join(", ")}
+                      </td>
+                      <td>
+                        <strong>R$ {order.total.toFixed(2)}</strong>
+                      </td>
+                      <td style={{ fontSize: ".82rem" }}>{new Date(order.createdAt).toLocaleDateString("pt-BR")}</td>
+                      <td>
+                        <StatusBadge status={order.status} />
+                      </td>
+                      <td style={{ fontSize: ".82rem" }}>
+                        {order.trackingCode ? (
+                          order.trackingUrl ? (
+                            <a href={order.trackingUrl} target="_blank" rel="noreferrer" style={{ color: "var(--purple-light)" }}>
+                              {order.trackingCode}
+                            </a>
+                          ) : (
+                            order.trackingCode
+                          )
+                        ) : (
+                          <span style={{ color: "var(--text-muted)" }}>—</span>
+                        )}
+                      </td>
+                      <td>
+                        {order.paymentStatus !== "approved" && order.status !== "cancelled" && (
+                          <button className="action-btn" onClick={() => navigate(`/pedido/${order.id}/pagamento`)}>
+                            Pagar
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="order-cards">
                 {orders.map((order) => (
-                  <tr key={order.id}>
-                    <td style={{ fontFamily: "Orbitron, monospace", color: "var(--purple)" }}>{order.orderNumber}</td>
-                    <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>
-                      {order.items.map((i) => `${i.name} x${i.qty}`).join(", ")}
-                    </td>
-                    <td>
-                      <strong>R$ {order.total.toFixed(2)}</strong>
-                    </td>
-                    <td style={{ fontSize: ".82rem" }}>{new Date(order.createdAt).toLocaleDateString("pt-BR")}</td>
-                    <td>
+                  <div className="order-card" key={order.id}>
+                    <div className="order-card-top">
+                      <span className="order-card-number">{order.orderNumber}</span>
                       <StatusBadge status={order.status} />
-                    </td>
-                    <td style={{ fontSize: ".82rem" }}>
-                      {order.trackingCode ? (
-                        order.trackingUrl ? (
+                    </div>
+                    <div className="order-card-items">
+                      {order.items.map((i) => `${i.name} x${i.qty}`).join(", ")}
+                    </div>
+                    <div className="order-card-footer">
+                      <div>
+                        <div className="order-card-label">Valor</div>
+                        <strong>R$ {order.total.toFixed(2)}</strong>
+                      </div>
+                      <div>
+                        <div className="order-card-label">Data</div>
+                        <span>{new Date(order.createdAt).toLocaleDateString("pt-BR")}</span>
+                      </div>
+                    </div>
+                    {order.trackingCode && (
+                      <div className="order-card-tracking">
+                        🚚{" "}
+                        {order.trackingUrl ? (
                           <a href={order.trackingUrl} target="_blank" rel="noreferrer" style={{ color: "var(--purple-light)" }}>
                             {order.trackingCode}
                           </a>
                         ) : (
                           order.trackingCode
-                        )
-                      ) : (
-                        <span style={{ color: "var(--text-muted)" }}>—</span>
-                      )}
-                    </td>
-                    <td>
-                      {order.paymentStatus !== "approved" && order.status !== "cancelled" && (
-                        <button className="action-btn" onClick={() => navigate(`/pedido/${order.id}/pagamento`)}>
-                          Pagar
-                        </button>
-                      )}
-                    </td>
-                  </tr>
+                        )}
+                      </div>
+                    )}
+                    {order.paymentStatus !== "approved" && order.status !== "cancelled" && (
+                      <button
+                        className="action-btn"
+                        style={{ width: "100%", marginTop: ".6rem" }}
+                        onClick={() => navigate(`/pedido/${order.id}/pagamento`)}
+                      >
+                        Pagar
+                      </button>
+                    )}
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </>
           )}
         </div>
       </div>

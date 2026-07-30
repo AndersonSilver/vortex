@@ -110,7 +110,9 @@ export interface OrderDTO {
   shippingMethod: ShippingMethod;
   couponCode: string | null;
   customerName: string;
-  customerEmail: string;
+  customerEmail: string | null;
+  customerPhone: string | null;
+  isManual: boolean;
   addressSnapshot: AddressDTO | null;
   trackingCode: string | null;
   trackingUrl: string | null;
@@ -124,6 +126,7 @@ export interface ShippingQuoteOption {
   price: number;
   estimatedDays: number;
   source: "correios" | "fallback" | "pickup";
+  carrier: string;
 }
 
 export interface CustomQuoteDTO {

@@ -23,8 +23,11 @@ export function Navbar() {
       <div className="nav-actions">
         {user ? (
           <>
-            <Link to="/conta" className="btn-ghost">
-              Olá, {user.name.split(" ")[0]}
+            <Link to="/conta" className="btn-ghost nav-greeting">
+              <span className="nav-greeting-icon" aria-hidden="true">
+                👤
+              </span>
+              <span className="nav-text">Olá, {user.name.split(" ")[0]}</span>
             </Link>
             <button
               className="btn-ghost"
@@ -42,11 +45,12 @@ export function Navbar() {
           </Link>
         )}
         <button className="cart-btn" onClick={() => navigate("/carrinho")}>
-          🛒 Carrinho <span className="cart-badge">{cartCount}</span>
+          🛒 <span className="nav-text">Carrinho</span>{" "}
+          <span className="cart-badge">{cartCount}</span>
         </button>
         {isAdmin && (
           <button className="btn-admin" onClick={() => navigate("/admin")}>
-            ⚡ Admin
+            ⚡ <span className="nav-text">Admin</span>
           </button>
         )}
       </div>

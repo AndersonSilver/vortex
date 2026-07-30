@@ -1,6 +1,8 @@
-import type { CreateOrderInput, OrderDTO, OrderItemDTO } from "@vortex/shared";
+import { randomUUID } from "node:crypto";
+import { In } from "typeorm";
+import type { AddressDTO, CreateManualOrderInput, CreateOrderInput, OrderDTO, OrderItemDTO } from "@vortex/shared";
 import { AppDataSource } from "../../config/data-source";
-import { Address, CartItem, Coupon, Order, OrderItem, User } from "../../entities";
+import { Address, CartItem, Coupon, Order, OrderItem, Product, User } from "../../entities";
 import { HttpError } from "../../utils/async-handler";
 import { calculateDiscount, calculateSubtotal, isCouponUsable } from "../../utils/pricing";
 import { getSettingsEntity } from "../settings/settings.service";
@@ -12,6 +14,7 @@ const cartRepo = () => AppDataSource.getRepository(CartItem);
 const addressRepo = () => AppDataSource.getRepository(Address);
 const couponRepo = () => AppDataSource.getRepository(Coupon);
 const userRepo = () => AppDataSource.getRepository(User);
+const productRepo = () => AppDataSource.getRepository(Product);
 
 const WEIGHT_PER_UNIT_KG = 0.25;
 const BASE_DIMENSIONS_CM = { lengthCm: 20, widthCm: 15, heightCm: 10 };
@@ -44,7 +47,9 @@ export function toOrderDTO(order: Order): OrderDTO {
     shippingMethod: order.shippingMethod,
     couponCode: order.couponCode ?? null,
     customerName: order.customerName,
-    customerEmail: order.customerEmail,
+    customerEmail: order.customerEmail ?? null,
+    customerPhone: order.customerPhone ?? null,
+    isManual: order.isManual,
     addressSnapshot: order.addressSnapshot ?? null,
     trackingCode: order.trackingCode ?? null,
     trackingUrl: order.trackingUrl ?? null,
@@ -172,6 +177,69 @@ export async function createOrder(userId: string, input: CreateOrderInput): Prom
 
   await cartRepo().delete({ userId });
 
+  return toOrderDTO(saved);
+}
+
+export async function createManualOrder(input: CreateManualOrderInput): Promise<OrderDTO> {
+  const productIds = [...new Set(input.items.map((item) => item.productId))];
+  const products = await productRepo().find({ where: { id: In(productIds) } });
+  const productById = new Map(products.map((p) => [p.id, p]));
+
+  const items = input.items.map((item) => {
+    const product = productById.get(item.productId);
+    if (!product) {
+      throw new HttpError(404, `Produto não encontrado: ${item.productId}`);
+    }
+    return {
+      productId: product.id,
+      nameSnapshot: product.name,
+      priceSnapshot: product.price,
+      costPriceSnapshot: product.costPrice ?? null,
+      qty: item.qty,
+      color: item.color,
+      material: item.material,
+    };
+  });
+
+  const subtotal = calculateSubtotal(items.map((item) => ({ price: Number(item.priceSnapshot), qty: item.qty })));
+  const discount = Math.min(input.discount, subtotal);
+  const shippingCost = input.shippingMethod === "pickup" ? 0 : input.shippingCost;
+  const total = Math.max(0, subtotal - discount + shippingCost);
+
+  const addressSnapshot: AddressDTO = {
+    id: randomUUID(),
+    label: input.address.label,
+    cep: input.address.cep,
+    state: input.address.state,
+    city: input.address.city,
+    neighborhood: input.address.neighborhood,
+    street: input.address.street,
+    number: input.address.number,
+    complement: input.address.complement ?? null,
+  };
+
+  const orderNumber = await generateOrderNumber();
+
+  const order = orderRepo().create({
+    orderNumber,
+    userId: null,
+    customerName: input.customerName,
+    customerEmail: input.customerEmail ?? null,
+    customerPhone: input.customerPhone ?? null,
+    isManual: true,
+    status: input.status,
+    paymentMethod: input.paymentMethod,
+    paymentStatus: input.paymentStatus,
+    subtotal,
+    discount,
+    shippingCost,
+    total,
+    shippingMethod: input.shippingMethod,
+    addressSnapshot,
+    items,
+  });
+
+  const saved = await orderRepo().save(order);
   return toOrderDTO(saved);
 }
 
