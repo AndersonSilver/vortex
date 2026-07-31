@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { ShippingMethod } from "@vortex/shared";
 import { useProduct, useProducts } from "../hooks/useProducts";
@@ -8,12 +8,19 @@ import { useShippingQuote } from "../hooks/useShipping";
 import { useToast } from "../components/Toast";
 import { useAuthStore } from "../state/auth-store";
 import { extractErrorMessage } from "../lib/api-client";
+import { fetchAddressByCep, type CepLookupResult } from "../lib/cep";
 
 const SHIPPING_LABELS: Record<ShippingMethod, { icon: string; title: string }> = {
   pac: { icon: "📦", title: "PAC" },
   sedex: { icon: "⚡", title: "SEDEX" },
   pickup: { icon: "🏠", title: "Retirada no local" },
 };
+
+function estimatedArrivalLabel(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+}
 
 export function ProductDetailPage() {
   const { slug } = useParams();
@@ -28,7 +35,49 @@ export function ProductDetailPage() {
   const [color, setColor] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const [cep, setCep] = useState("");
-  const [activeImage, setActiveImage] = useState(0);
+  const [cepAddress, setCepAddress] = useState<CepLookupResult | null>(null);
+  const [cepStatus, setCepStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [selectedShippingMethod, setSelectedShippingMethod] = useState<ShippingMethod | null>(null);
+  const [activeMedia, setActiveMedia] = useState(0);
+
+  useEffect(() => {
+    const digits = cep.replace(/\D/g, "");
+    if (digits.length !== 8) {
+      setCepStatus("idle");
+      setCepAddress(null);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setCepStatus("loading");
+      try {
+        const result = await fetchAddressByCep(digits, controller.signal);
+        if (!result) {
+          setCepStatus("error");
+          setCepAddress(null);
+          return;
+        }
+        setCepStatus("idle");
+        setCepAddress(result);
+      } catch {
+        if (!controller.signal.aborted) {
+          setCepStatus("error");
+          setCepAddress(null);
+        }
+      }
+    }, 400);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [cep]);
+
+  useEffect(() => {
+    if (shippingQuote.data && shippingQuote.data.length > 0) {
+      const cheapest = [...shippingQuote.data].sort((a, b) => a.price - b.price)[0];
+      setSelectedShippingMethod(cheapest.method);
+    }
+  }, [shippingQuote.data]);
 
   if (isLoading) {
     return (
@@ -51,8 +100,16 @@ export function ProductDetailPage() {
   }
 
   const selectedColor = color ?? product.colors[0];
+  const shippingOptions = shippingQuote.data ? [...shippingQuote.data].sort((a, b) => a.price - b.price) : null;
+  const deliveryOptions = shippingOptions?.filter((o) => o.method !== "pickup") ?? [];
+  const cheapestShippingMethod = deliveryOptions.length > 1 ? deliveryOptions[0].method : null;
   const related = allProducts.filter((p) => p.id !== product.id).slice(0, 4);
   const gallery = product.images.length > 0 ? product.images : product.imageUrl ? [product.imageUrl] : [];
+  const media = [
+    ...gallery.map((url) => ({ type: "image" as const, url })),
+    ...(product.videoUrl ? [{ type: "video" as const, url: product.videoUrl }] : []),
+  ];
+  const currentMedia = media[activeMedia] ?? media[0];
 
   function handleCheckShipping() {
     const digits = cep.replace(/\D/g, "");
@@ -87,52 +144,43 @@ export function ProductDetailPage() {
           ← Voltar ao catálogo
         </button>
         <div className="detail-grid">
-          <div>
-            <div className="detail-img">
-              {gallery.length > 0 ? (
-                <img
-                  src={gallery[activeImage] ?? gallery[0]}
-                  alt={product.name}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
-                />
-              ) : (
-                product.emoji
-              )}
-            </div>
-            {gallery.length > 1 && (
-              <div style={{ display: "flex", gap: ".6rem", marginTop: ".8rem" }}>
-                {gallery.map((url, index) => (
+          <div className="detail-media">
+            {media.length > 1 && (
+              <div className="detail-thumbs">
+                {media.map((item, index) => (
                   <button
-                    key={url + index}
-                    onClick={() => setActiveImage(index)}
-                    style={{
-                      width: "64px",
-                      height: "64px",
-                      padding: 0,
-                      borderRadius: "8px",
-                      overflow: "hidden",
-                      cursor: "pointer",
-                      background: "var(--bg2)",
-                      border: index === activeImage ? "2px solid var(--purple)" : "1px solid var(--border)",
-                    }}
+                    key={item.url + index}
+                    className={`thumb-btn${index === activeMedia ? " active" : ""}`}
+                    onClick={() => setActiveMedia(index)}
                   >
-                    <img src={url} alt={`${product.name} ${index + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    {item.type === "video" ? (
+                      <>
+                        <video src={item.url} muted preload="metadata" />
+                        <span className="thumb-play">▶</span>
+                      </>
+                    ) : (
+                      <img src={item.url} alt={`${product.name} ${index + 1}`} />
+                    )}
                   </button>
                 ))}
               </div>
             )}
-            {product.videoUrl && (
-              <video
-                src={product.videoUrl}
-                controls
-                style={{
-                  width: "100%",
-                  marginTop: "1rem",
-                  borderRadius: "var(--radius)",
-                  border: "1px solid var(--border)",
-                }}
-              />
-            )}
+            <div className="detail-img">
+              {currentMedia ? (
+                currentMedia.type === "video" ? (
+                  <video key={currentMedia.url} src={currentMedia.url} controls style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "inherit" }} />
+                ) : (
+                  <img
+                    key={currentMedia.url}
+                    src={currentMedia.url}
+                    alt={product.name}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
+                  />
+                )
+              ) : (
+                product.emoji
+              )}
+            </div>
           </div>
           <div className="detail-info">
             <div className="product-cat">{categoryLabel(product.category)}</div>
@@ -148,11 +196,6 @@ export function ProductDetailPage() {
             </div>
             <div className="detail-price">
               R$ {product.price.toFixed(2)} {product.oldPrice && <span>R$ {product.oldPrice.toFixed(2)}</span>}
-            </div>
-            <div className="detail-tags">
-              <span className="tag">🧵 Material: {product.material}</span>
-              <span className="tag">🚀 Entrega 24-48h</span>
-              <span className="tag">🔄 Reimpressão garantida</span>
             </div>
             <p className="detail-desc">{product.description}</p>
             <div className="detail-options">
@@ -177,7 +220,7 @@ export function ProductDetailPage() {
               </div>
               <span style={{ fontSize: ".85rem", color: "var(--success)" }}>✓ Em estoque</span>
             </div>
-            <div className="form-group" style={{ maxWidth: "360px" }}>
+            <div className="form-group">
               <label>📍 Calcular frete</label>
               <div style={{ display: "flex", gap: ".6rem" }}>
                 <input
@@ -196,20 +239,44 @@ export function ProductDetailPage() {
                   {shippingQuote.isPending ? "Calculando..." : "Calcular"}
                 </button>
               </div>
-              {shippingQuote.data && (
-                <div style={{ display: "flex", gap: ".6rem", marginTop: ".6rem" }}>
-                  {shippingQuote.data.map((option) => (
-                    <div key={option.method} className="pay-method" style={{ flex: 1, cursor: "default" }}>
-                      <span className="pay-method-icon">{SHIPPING_LABELS[option.method].icon}</span>
-                      <span className="pay-method-label">
-                        {SHIPPING_LABELS[option.method].title}
-                        <br />
-                        <small>
-                          {option.price === 0 ? "Grátis" : `R$ ${option.price.toFixed(2)}`} · {option.estimatedDays}d
-                        </small>
-                      </span>
-                    </div>
-                  ))}
+              {cepStatus === "loading" && <p className="cep-hint">Buscando endereço...</p>}
+              {cepStatus === "error" && <p className="cep-hint cep-hint-error">CEP não encontrado.</p>}
+              {cepAddress && cepStatus === "idle" && (
+                <p className="cep-hint">
+                  {cepAddress.street ? `${cepAddress.street}, ` : ""}
+                  {cepAddress.neighborhood} — {cepAddress.city}/{cepAddress.state}
+                </p>
+              )}
+              {shippingOptions && (
+                <div className="shipping-options">
+                  {shippingOptions.map((option) => {
+                    const isSelected = selectedShippingMethod === option.method;
+                    const isCheapest = cheapestShippingMethod === option.method;
+                    return (
+                      <button
+                        key={option.method}
+                        type="button"
+                        className={`shipping-option${isSelected ? " active" : ""}`}
+                        onClick={() => setSelectedShippingMethod(option.method)}
+                      >
+                        <span className="shipping-option-radio" />
+                        <span className="shipping-option-icon">{SHIPPING_LABELS[option.method].icon}</span>
+                        <span className="shipping-option-info">
+                          <span className="shipping-option-title">
+                            {SHIPPING_LABELS[option.method].title}
+                            {isCheapest && <span className="shipping-badge">Mais barato</span>}
+                          </span>
+                          <span className="shipping-option-meta">
+                            Chega até {estimatedArrivalLabel(option.estimatedDays)} · {option.estimatedDays}{" "}
+                            {option.estimatedDays === 1 ? "dia útil" : "dias úteis"}
+                          </span>
+                        </span>
+                        <span className="shipping-option-price">
+                          {option.price === 0 ? "Grátis" : `R$ ${option.price.toFixed(2)}`}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -217,7 +284,6 @@ export function ProductDetailPage() {
               <button className="btn-add-cart" onClick={handleAddToCart} disabled={addToCart.isPending}>
                 🛒 Adicionar ao Carrinho
               </button>
-              <button className="btn-wishlist">♡</button>
             </div>
             <div className="detail-specs" style={{ marginTop: "1.5rem" }}>
               <div style={{ fontSize: ".85rem", fontWeight: 700, marginBottom: ".8rem" }}>Especificações</div>
