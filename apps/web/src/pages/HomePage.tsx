@@ -213,27 +213,19 @@ export function HomePage() {
           </div>
           <div className="footer-col">
             <h4>Produtos</h4>
-            <a>Miniaturas</a>
-            <a>Industrial</a>
-            <a>Decoração</a>
-            <a>Personalizado</a>
-          </div>
-          <div className="footer-col">
-            <h4>Empresa</h4>
-            <a>Sobre nós</a>
-            <a>Tecnologia</a>
-            <a>Blog</a>
-            <a>Trabalhe conosco</a>
-          </div>
-          <div className="footer-col">
-            <h4>Suporte</h4>
-            <a>FAQ</a>
-            <a>Rastrear pedido</a>
-            <a>Devoluções</a>
-            <a>Contato</a>
+            <a href="#catalog" onClick={() => setCategory("figurines")}>
+              Miniaturas
+            </a>
+            <a href="#catalog" onClick={() => setCategory("industrial")}>
+              Industrial
+            </a>
+            <a href="#catalog" onClick={() => setCategory("decor")}>
+              Decoração
+            </a>
+            <a href="#custom">Personalizado</a>
           </div>
         </div>
-        <div className="footer-bottom">© 2026 Vórtex 3D · Todos os direitos reservados · CNPJ 00.000.000/0001-00</div>
+        <div className="footer-bottom">© 2026 Vórtex 3D · Todos os direitos reservados</div>
       </footer>
 
       <CustomQuoteModal open={quoteModalOpen} onClose={() => setQuoteModalOpen(false)} />
