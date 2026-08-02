@@ -1,6 +1,7 @@
 import type {
   CouponType,
   CustomQuoteStatus,
+  DiscountType,
   FilamentMaterialType,
   FilamentMovementType,
   OrderStatus,
@@ -106,6 +107,8 @@ export interface OrderDTO {
   paymentStatus: PaymentStatus;
   subtotal: number;
   discount: number;
+  discountType: DiscountType;
+  discountValue: number;
   shippingCost: number;
   total: number;
   shippingMethod: ShippingMethod;

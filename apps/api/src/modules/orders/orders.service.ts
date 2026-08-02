@@ -1,10 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { In } from "typeorm";
-import type { AddressDTO, CreateManualOrderInput, CreateOrderInput, OrderDTO, OrderItemDTO } from "@vortex/shared";
+import type {
+  AddressDTO,
+  CreateManualOrderInput,
+  CreateOrderInput,
+  OrderDTO,
+  OrderItemDTO,
+  UpdateManualOrderDiscountInput,
+} from "@vortex/shared";
 import { AppDataSource } from "../../config/data-source";
 import { Address, CartItem, Coupon, Order, OrderItem, Product, User } from "../../entities";
 import { HttpError } from "../../utils/async-handler";
-import { calculateDiscount, calculateSubtotal, isCouponUsable } from "../../utils/pricing";
+import { calculateDiscount, calculateManualDiscount, calculateSubtotal, isCouponUsable } from "../../utils/pricing";
 import { getSettingsEntity } from "../settings/settings.service";
 import { quoteShipping } from "../shipping/shipping-provider.service";
 import { toAddressDTO } from "../addresses/addresses.routes";
@@ -42,6 +49,8 @@ export function toOrderDTO(order: Order): OrderDTO {
     paymentStatus: order.paymentStatus,
     subtotal: Number(order.subtotal),
     discount: Number(order.discount),
+    discountType: order.discountType,
+    discountValue: Number(order.discountValue),
     shippingCost: Number(order.shippingCost),
     total: Number(order.total),
     shippingMethod: order.shippingMethod,
@@ -202,7 +211,7 @@ export async function createManualOrder(input: CreateManualOrderInput): Promise<
   });
 
   const subtotal = calculateSubtotal(items.map((item) => ({ price: Number(item.priceSnapshot), qty: item.qty })));
-  const discount = Math.min(input.discount, subtotal);
+  const discount = calculateManualDiscount(input.discountType, input.discountValue, subtotal);
   const shippingCost = input.shippingMethod === "pickup" ? 0 : input.shippingCost;
   const total = Math.max(0, subtotal - discount + shippingCost);
 
@@ -232,6 +241,8 @@ export async function createManualOrder(input: CreateManualOrderInput): Promise<
     paymentStatus: input.paymentStatus,
     subtotal,
     discount,
+    discountType: input.discountType,
+    discountValue: input.discountValue,
     shippingCost,
     total,
     shippingMethod: input.shippingMethod,
@@ -239,6 +250,25 @@ export async function createManualOrder(input: CreateManualOrderInput): Promise<
     items,
   });
 
+  const saved = await orderRepo().save(order);
+  return toOrderDTO(saved);
+}
+
+export async function updateManualOrderDiscount(
+  id: string,
+  input: UpdateManualOrderDiscountInput,
+): Promise<OrderDTO> {
+  const order = await orderRepo().findOneBy({ id });
+  if (!order) throw new HttpError(404, "Pedido não encontrado.");
+  if (!order.isManual) {
+    throw new HttpError(400, "Só é possível ajustar o desconto de pedidos manuais.");
+  }
+  const subtotal = Number(order.subtotal);
+  const discount = calculateManualDiscount(input.discountType, input.discountValue, subtotal);
+  order.discountType = input.discountType;
+  order.discountValue = input.discountValue;
+  order.discount = discount;
+  order.total = Math.max(0, subtotal - discount + Number(order.shippingCost));
   const saved = await orderRepo().save(order);
   return toOrderDTO(saved);
 }

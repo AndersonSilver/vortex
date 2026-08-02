@@ -1,3 +1,4 @@
+import type { DiscountType } from "@vortex/shared";
 import type { Coupon } from "../entities/Coupon";
 
 export interface CartLine {
@@ -36,6 +37,13 @@ export function calculateDiscount(coupon: Coupon, subtotal: number, shippingCost
     default:
       return 0;
   }
+}
+
+export function calculateManualDiscount(type: DiscountType, value: number, subtotal: number): number {
+  if (type === "percent") {
+    return subtotal * (Math.min(value, 100) / 100);
+  }
+  return Math.min(value, subtotal);
 }
 
 export interface PaymentMethodAdjustment {

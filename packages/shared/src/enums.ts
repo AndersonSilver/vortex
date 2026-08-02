@@ -56,6 +56,9 @@ export type ShippingMethod = (typeof SHIPPING_METHODS)[number];
 export const COUPON_TYPES = ["percent", "fixed", "free_shipping"] as const;
 export type CouponType = (typeof COUPON_TYPES)[number];
 
+export const DISCOUNT_TYPES = ["percent", "fixed"] as const;
+export type DiscountType = (typeof DISCOUNT_TYPES)[number];
+
 export const CUSTOM_QUOTE_STATUSES = ["pending", "quoted", "rejected"] as const;
 export type CustomQuoteStatus = (typeof CUSTOM_QUOTE_STATUSES)[number];
 

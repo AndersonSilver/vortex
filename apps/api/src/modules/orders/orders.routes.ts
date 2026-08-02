@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createManualOrderSchema,
   createOrderSchema,
+  updateManualOrderDiscountSchema,
   updateOrderStatusSchema,
   updateOrderTrackingSchema,
 } from "@vortex/shared";
@@ -76,6 +77,16 @@ ordersRouter.patch(
       req.body.trackingCode,
       req.body.trackingUrl,
     );
+    res.json(order);
+  }),
+);
+
+ordersRouter.patch(
+  "/:id/manual-discount",
+  requireRole("admin"),
+  validateBody(updateManualOrderDiscountSchema),
+  asyncHandler(async (req, res) => {
+    const order = await ordersService.updateManualOrderDiscount(req.params.id, req.body);
     res.json(order);
   }),
 );

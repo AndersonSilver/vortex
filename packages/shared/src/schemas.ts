@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   COUPON_TYPES,
+  DISCOUNT_TYPES,
   FILAMENT_MATERIALS,
   FILAMENT_MOVEMENT_TYPES,
   ORDER_STATUSES,
@@ -124,7 +125,8 @@ export const createManualOrderSchema = z
     items: z.array(manualOrderItemSchema).min(1),
     shippingMethod: z.enum(SHIPPING_METHODS),
     shippingCost: z.number().min(0).default(0),
-    discount: z.number().min(0).default(0),
+    discountType: z.enum(DISCOUNT_TYPES).default("fixed"),
+    discountValue: z.number().min(0).default(0),
     paymentMethod: z.enum(PAYMENT_METHODS),
     paymentStatus: z.enum(PAYMENT_STATUSES).default("pending"),
     status: z.enum(ORDER_STATUSES).default("pending"),
@@ -132,6 +134,10 @@ export const createManualOrderSchema = z
   .refine((data) => !!data.customerEmail || !!data.customerPhone, {
     message: "Informe e-mail ou telefone do cliente.",
     path: ["customerPhone"],
+  })
+  .refine((data) => data.discountType !== "percent" || data.discountValue <= 100, {
+    message: "Desconto percentual não pode passar de 100%.",
+    path: ["discountValue"],
   });
 export type CreateManualOrderInput = z.infer<typeof createManualOrderSchema>;
 
@@ -283,3 +289,14 @@ export const updateOrderTrackingSchema = z.object({
   trackingUrl: z.string().url().optional(),
 });
 export type UpdateOrderTrackingInput = z.infer<typeof updateOrderTrackingSchema>;
+
+export const updateManualOrderDiscountSchema = z
+  .object({
+    discountType: z.enum(DISCOUNT_TYPES),
+    discountValue: z.number().min(0),
+  })
+  .refine((data) => data.discountType !== "percent" || data.discountValue <= 100, {
+    message: "Desconto percentual não pode passar de 100%.",
+    path: ["discountValue"],
+  });
+export type UpdateManualOrderDiscountInput = z.infer<typeof updateManualOrderDiscountSchema>;

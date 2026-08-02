@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CreateManualOrderInput, CreateOrderInput, OrderDTO, OrderStatus } from "@vortex/shared";
+import type {
+  CreateManualOrderInput,
+  CreateOrderInput,
+  OrderDTO,
+  OrderStatus,
+  UpdateManualOrderDiscountInput,
+} from "@vortex/shared";
 import { api } from "../lib/api-client";
 import { useAuthStore } from "../state/auth-store";
 
@@ -91,6 +97,20 @@ export function useUpdateOrderTracking() {
       queryClient.invalidateQueries({ queryKey: ["admin", "orders"] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["order"] });
+    },
+  });
+}
+
+export function useUpdateManualOrderDiscount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...input }: { id: string } & UpdateManualOrderDiscountInput) => {
+      const { data } = await api.patch<OrderDTO>(`/orders/${id}/manual-discount`, input);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "orders"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
     },
   });
 }

@@ -10,6 +10,7 @@ import {
 } from "typeorm";
 import type {
   AddressDTO,
+  DiscountType,
   OrderStatus,
   PaymentMethod,
   PaymentStatus,
@@ -60,6 +61,12 @@ export class Order {
 
   @Column({ type: "numeric", precision: 10, scale: 2, default: 0 })
   discount!: number;
+
+  @Column({ name: "discount_type", type: "varchar", default: "fixed" })
+  discountType!: DiscountType;
+
+  @Column({ name: "discount_value", type: "numeric", precision: 10, scale: 2, default: 0 })
+  discountValue!: number;
 
   @Column({ name: "shipping_cost", type: "numeric", precision: 10, scale: 2, default: 0 })
   shippingCost!: number;

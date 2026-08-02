@@ -1,17 +1,25 @@
 import { useEffect, useState } from "react";
 import {
+  DISCOUNT_TYPES,
   ORDER_STATUSES,
   ORDER_STATUS_LABELS,
   PAYMENT_METHODS,
   PAYMENT_STATUSES,
   SHIPPING_METHODS,
+  type DiscountType,
   type OrderDTO,
   type OrderStatus,
   type PaymentMethod,
   type PaymentStatus,
   type ShippingMethod,
 } from "@vortex/shared";
-import { useAdminOrders, useCreateManualOrder, useUpdateOrderStatus, useUpdateOrderTracking } from "../../hooks/useOrders";
+import {
+  useAdminOrders,
+  useCreateManualOrder,
+  useUpdateManualOrderDiscount,
+  useUpdateOrderStatus,
+  useUpdateOrderTracking,
+} from "../../hooks/useOrders";
 import { useProducts } from "../../hooks/useProducts";
 import { StatusBadge } from "../../components/StatusBadge";
 import { Modal } from "../../components/Modal";
@@ -40,6 +48,18 @@ const SHIPPING_METHOD_LABELS: Record<ShippingMethod, string> = {
   pickup: "Retirada no local",
 };
 
+const DISCOUNT_TYPE_LABELS: Record<DiscountType, string> = {
+  percent: "Percentual (%)",
+  fixed: "Valor Fixo (R$)",
+};
+
+function calcManualDiscount(type: DiscountType, value: number, subtotal: number): number {
+  if (type === "percent") {
+    return subtotal * (Math.min(value, 100) / 100);
+  }
+  return Math.min(value, subtotal);
+}
+
 interface ManualItemRow {
   productId: string;
   qty: string;
@@ -66,7 +86,8 @@ const EMPTY_MANUAL_FORM = {
   customerEmail: "",
   shippingMethod: "pac" as ShippingMethod,
   shippingCost: "0",
-  discount: "0",
+  discountType: "fixed" as DiscountType,
+  discountValue: "0",
   paymentMethod: "pix" as PaymentMethod,
   paymentStatus: "pending" as PaymentStatus,
   status: "pending" as OrderStatus,
@@ -80,9 +101,14 @@ export function AdminOrdersPage() {
   const { data: products = [] } = useProducts();
   const updateStatus = useUpdateOrderStatus();
   const updateTracking = useUpdateOrderTracking();
+  const updateManualDiscount = useUpdateManualOrderDiscount();
   const createManualOrder = useCreateManualOrder();
   const { showToast } = useToast();
   const [trackingInput, setTrackingInput] = useState("");
+  const [discountEdit, setDiscountEdit] = useState<{ type: DiscountType; value: string }>({
+    type: "fixed",
+    value: "0",
+  });
 
   const [manualModalOpen, setManualModalOpen] = useState(false);
   const [manualForm, setManualForm] = useState(EMPTY_MANUAL_FORM);
@@ -92,6 +118,10 @@ export function AdminOrdersPage() {
 
   useEffect(() => {
     setTrackingInput(viewOrder?.trackingCode ?? "");
+    setDiscountEdit({
+      type: viewOrder?.discountType ?? "fixed",
+      value: String(viewOrder?.discountValue ?? 0),
+    });
   }, [viewOrder]);
 
   useEffect(() => {
@@ -165,7 +195,8 @@ export function AdminOrdersPage() {
   }, 0);
   const manualShippingCost =
     manualForm.shippingMethod === "pickup" ? 0 : parseFloat(manualForm.shippingCost) || 0;
-  const manualDiscount = Math.min(parseFloat(manualForm.discount) || 0, manualSubtotal);
+  const manualDiscountValue = parseFloat(manualForm.discountValue) || 0;
+  const manualDiscount = calcManualDiscount(manualForm.discountType, manualDiscountValue, manualSubtotal);
   const manualTotal = Math.max(0, manualSubtotal - manualDiscount + manualShippingCost);
 
   function handleCreateManualOrder() {
@@ -218,7 +249,8 @@ export function AdminOrdersPage() {
         items: parsedItems,
         shippingMethod: manualForm.shippingMethod,
         shippingCost: manualShippingCost,
-        discount: manualDiscount,
+        discountType: manualForm.discountType,
+        discountValue: manualDiscountValue,
         paymentMethod: manualForm.paymentMethod,
         paymentStatus: manualForm.paymentStatus,
         status: manualForm.status,
@@ -260,6 +292,25 @@ export function AdminOrdersPage() {
           showToast("Código de rastreio salvo!", "success");
         },
         onError: () => showToast("Não foi possível salvar o rastreio.", "error"),
+      },
+    );
+  }
+
+  function handleSaveDiscount() {
+    if (!viewOrder) return;
+    const value = parseFloat(discountEdit.value) || 0;
+    if (discountEdit.type === "percent" && value > 100) {
+      showToast("Desconto percentual não pode passar de 100%.", "error");
+      return;
+    }
+    updateManualDiscount.mutate(
+      { id: viewOrder.id, discountType: discountEdit.type, discountValue: value },
+      {
+        onSuccess: (updated) => {
+          setViewOrder(updated);
+          showToast("Desconto atualizado!", "success");
+        },
+        onError: (error) => showToast(extractErrorMessage(error, "Não foi possível atualizar o desconto."), "error"),
       },
     );
   }
@@ -379,7 +430,12 @@ export function AdminOrdersPage() {
         </table>
       </div>
 
-      <Modal open={!!viewOrder} onClose={() => setViewOrder(null)} title={`Pedido ${viewOrder?.orderNumber ?? ""}`}>
+      <Modal
+        open={!!viewOrder}
+        onClose={() => setViewOrder(null)}
+        title={`Pedido ${viewOrder?.orderNumber ?? ""}`}
+        size="lg"
+      >
         {viewOrder &&
           (() => {
             const revenue = viewOrder.items.reduce((sum, i) => sum + i.price * i.qty, 0);
@@ -387,40 +443,74 @@ export function AdminOrdersPage() {
             const profit = revenue - cost;
             return (
               <>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                rowGap: "1.1rem",
+                columnGap: "1rem",
+                marginBottom: "1.2rem",
+              }}
+            >
               <div>
-                <div style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Cliente</div>
-                <div style={{ fontWeight: 600 }}>{viewOrder.customerName}</div>
+                <span style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Cliente: </span>
+                <span style={{ fontWeight: 600 }}>{viewOrder.customerName}</span>
               </div>
               <div>
-                <div style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Contato</div>
-                <div>
-                  {viewOrder.customerEmail && <div>{viewOrder.customerEmail}</div>}
-                  {viewOrder.customerPhone && <div>📱 {viewOrder.customerPhone}</div>}
-                  {!viewOrder.customerEmail && !viewOrder.customerPhone && "—"}
-                </div>
+                {viewOrder.customerEmail && (
+                  <div>
+                    <span style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Email: </span>
+                    <span>{viewOrder.customerEmail}</span>
+                  </div>
+                )}
+                {viewOrder.customerPhone && (
+                  <div style={{ marginTop: viewOrder.customerEmail ? ".2rem" : 0 }}>
+                    <span style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Telefone: </span>
+                    <span>{viewOrder.customerPhone}</span>
+                  </div>
+                )}
+                {!viewOrder.customerEmail && !viewOrder.customerPhone && (
+                  <div>
+                    <span style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Contato: </span>
+                    <span>—</span>
+                  </div>
+                )}
               </div>
               <div>
-                <div style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Data</div>
-                <div>{new Date(viewOrder.createdAt).toLocaleDateString("pt-BR")}</div>
+                <span style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Data: </span>
+                <span>{new Date(viewOrder.createdAt).toLocaleDateString("pt-BR")}</span>
               </div>
               <div>
-                <div style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Pagamento</div>
-                <div style={{ textTransform: "uppercase" }}>{viewOrder.paymentMethod}</div>
+                <span style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Pagamento: </span>
+                <span style={{ textTransform: "uppercase" }}>{viewOrder.paymentMethod}</span>
               </div>
-              <div>
-                <div style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Status</div>
+              <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                <span style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Status: </span>
                 <StatusBadge status={viewOrder.status} />
               </div>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "1rem",
+                background: "var(--bg3)",
+                border: "1px solid var(--border)",
+                borderRadius: "10px",
+                padding: "1rem 1.2rem",
+                marginBottom: "1.2rem",
+              }}
+            >
               <div>
-                <div style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Total</div>
-                <div style={{ fontFamily: "Orbitron, monospace", color: "var(--purple)", fontWeight: 700 }}>
+                <div style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Total do pedido</div>
+                <div style={{ fontFamily: "Orbitron, monospace", color: "var(--purple)", fontWeight: 700, fontSize: "1.25rem" }}>
                   R$ {viewOrder.total.toFixed(2)}
                 </div>
               </div>
-              <div style={{ gridColumn: "1 / -1" }}>
+              <div>
                 <div style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Lucro (itens do pedido)</div>
-                <div style={{ color: profit >= 0 ? "var(--success)" : "var(--danger)", fontWeight: 700 }}>
+                <div style={{ color: profit >= 0 ? "var(--success)" : "var(--danger)", fontWeight: 700, fontSize: "1.1rem" }}>
                   R$ {profit.toFixed(2)}
                   {revenue > 0 && (
                     <span style={{ color: "var(--text-muted)", fontWeight: 400, fontSize: ".8rem" }}>
@@ -431,9 +521,57 @@ export function AdminOrdersPage() {
                 </div>
               </div>
             </div>
+
             <div style={{ background: "var(--bg3)", borderRadius: "8px", padding: "1rem", fontSize: ".88rem", color: "var(--text-muted)" }}>
               {viewOrder.items.map((i) => `${i.name} x${i.qty}`).join(", ")}
             </div>
+
+            {viewOrder.isManual && (
+              <>
+                <div className="section-divider" />
+                <label style={{ fontSize: ".82rem", color: "var(--text-muted)" }}>💰 Desconto (pedido manual)</label>
+                <div style={{ fontSize: ".82rem", color: "var(--text-muted)", marginTop: ".2rem" }}>
+                  Aplicado atualmente: R$ {viewOrder.discount.toFixed(2)}
+                  {viewOrder.discountType === "percent" && ` (${viewOrder.discountValue}%)`}
+                </div>
+                <div className="form-row" style={{ marginTop: ".4rem" }}>
+                  <div className="form-group">
+                    <label>Tipo</label>
+                    <select
+                      className="admin-select"
+                      value={discountEdit.type}
+                      onChange={(e) => setDiscountEdit({ ...discountEdit, type: e.target.value as DiscountType })}
+                    >
+                      {DISCOUNT_TYPES.map((type) => (
+                        <option key={type} value={type}>
+                          {DISCOUNT_TYPE_LABELS[type]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Desconto {discountEdit.type === "percent" ? "(%)" : "(R$)"}</label>
+                    <input
+                      className="admin-input"
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      max={discountEdit.type === "percent" ? 100 : undefined}
+                      value={discountEdit.value}
+                      onChange={(e) => setDiscountEdit({ ...discountEdit, value: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <button
+                  className="btn-outline"
+                  style={{ width: "100%", marginTop: ".4rem" }}
+                  onClick={handleSaveDiscount}
+                  disabled={updateManualDiscount.isPending}
+                >
+                  💾 Salvar desconto
+                </button>
+              </>
+            )}
 
             <div className="section-divider" />
             <div className="form-group">
@@ -685,16 +823,33 @@ export function AdminOrdersPage() {
         </div>
         <div className="form-row">
           <div className="form-group">
-            <label>Desconto (R$)</label>
+            <label>Tipo de desconto</label>
+            <select
+              className="admin-select"
+              value={manualForm.discountType}
+              onChange={(e) => setManualForm({ ...manualForm, discountType: e.target.value as DiscountType })}
+            >
+              {DISCOUNT_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {DISCOUNT_TYPE_LABELS[type]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Desconto {manualForm.discountType === "percent" ? "(%)" : "(R$)"}</label>
             <input
               className="admin-input"
               type="number"
               step="0.01"
               min={0}
-              value={manualForm.discount}
-              onChange={(e) => setManualForm({ ...manualForm, discount: e.target.value })}
+              max={manualForm.discountType === "percent" ? 100 : undefined}
+              value={manualForm.discountValue}
+              onChange={(e) => setManualForm({ ...manualForm, discountValue: e.target.value })}
             />
           </div>
+        </div>
+        <div className="form-row">
           <div className="form-group">
             <label>Forma de pagamento</label>
             <select
@@ -709,8 +864,6 @@ export function AdminOrdersPage() {
               ))}
             </select>
           </div>
-        </div>
-        <div className="form-row">
           <div className="form-group">
             <label>Status do pagamento</label>
             <select
@@ -725,6 +878,8 @@ export function AdminOrdersPage() {
               ))}
             </select>
           </div>
+        </div>
+        <div className="form-row">
           <div className="form-group">
             <label>Status do pedido</label>
             <select
