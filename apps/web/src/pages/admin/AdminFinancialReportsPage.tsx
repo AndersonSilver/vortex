@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useProductProfitReport, useSalesReport } from "../../hooks/useReports";
+import { useProductProfitReport, useProfitLossReport, useSalesReport } from "../../hooks/useReports";
 
 function toISODate(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -23,6 +23,7 @@ export function AdminFinancialReportsPage() {
 
   const { data: sales, isLoading: loadingSales } = useSalesReport(from, to);
   const { data: products = [], isLoading: loadingProducts } = useProductProfitReport(from, to);
+  const { data: profitLoss } = useProfitLossReport(from, to);
 
   const maxProfit = Math.max(...(sales?.byDay.map((d) => Math.abs(d.profit)) ?? [1]), 1);
 
@@ -114,6 +115,60 @@ export function AdminFinancialReportsPage() {
             </div>
           </div>
         </>
+      )}
+
+      {profitLoss && (
+        <div className="admin-table-wrap" style={{ marginBottom: "1.5rem" }}>
+          <div className="admin-table-header">
+            <h3>Resultado do período</h3>
+          </div>
+          <table className="admin-table">
+            <tbody>
+              <tr>
+                <td>Receita</td>
+                <td style={{ textAlign: "right" }}>R$ {profitLoss.revenue.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td>(−) Custo dos produtos vendidos</td>
+                <td style={{ textAlign: "right" }}>R$ {profitLoss.productCost.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td>
+                  <strong>= Lucro bruto</strong>
+                </td>
+                <td style={{ textAlign: "right" }}>
+                  <strong>R$ {profitLoss.grossProfit.toFixed(2)}</strong>
+                </td>
+              </tr>
+              <tr>
+                <td>(−) Custos variáveis lançados</td>
+                <td style={{ textAlign: "right" }}>R$ {profitLoss.variableExpenses.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td>(−) Custos fixos</td>
+                <td style={{ textAlign: "right" }}>R$ {profitLoss.fixedExpenses.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td>(−) Depreciação</td>
+                <td style={{ textAlign: "right" }}>R$ {profitLoss.depreciation.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td>
+                  <strong>= Lucro líquido</strong>
+                </td>
+                <td style={{ textAlign: "right" }}>
+                  <strong style={{ color: profitLoss.netProfit < 0 ? "var(--danger)" : undefined }}>
+                    R$ {profitLoss.netProfit.toFixed(2)} ({profitLoss.netMarginPercent.toFixed(1)}%)
+                  </strong>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p style={{ color: "var(--text-muted)", fontSize: ".8rem", padding: ".6rem 1rem" }}>
+            Compra de equipamento não entra como despesa aqui: o que pesa no resultado é a depreciação do mês. Os
+            custos fixos e a depreciação só aparecem depois de lançar o mês na aba Despesas.
+          </p>
+        </div>
       )}
 
       <div className="admin-table-wrap">

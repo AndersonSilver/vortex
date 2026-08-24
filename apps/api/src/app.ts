@@ -20,6 +20,11 @@ import { printersRouter } from "./modules/printers/printers.routes";
 import { printJobsRouter } from "./modules/print-jobs/print-jobs.routes";
 import { suppliersRouter } from "./modules/suppliers/suppliers.routes";
 import { purchaseOrdersRouter } from "./modules/purchase-orders/purchase-orders.routes";
+import { expenseCategoriesRouter } from "./modules/expense-categories/expense-categories.routes";
+import { suppliesRouter } from "./modules/supplies/supplies.routes";
+import { assetsRouter } from "./modules/assets/assets.routes";
+import { recurringExpensesRouter } from "./modules/recurring-expenses/recurring-expenses.routes";
+import { expensesRouter } from "./modules/expenses/expenses.routes";
 
 export function createApp() {
   const app = express();
@@ -58,6 +63,11 @@ export function createApp() {
   app.use("/print-jobs", printJobsRouter);
   app.use("/suppliers", suppliersRouter);
   app.use("/purchase-orders", purchaseOrdersRouter);
+  app.use("/expense-categories", expenseCategoriesRouter);
+  app.use("/supplies", suppliesRouter);
+  app.use("/assets", assetsRouter);
+  app.use("/recurring-expenses", recurringExpensesRouter);
+  app.use("/expenses", expensesRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

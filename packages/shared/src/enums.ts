@@ -123,3 +123,95 @@ export const PURCHASE_ORDER_STATUS_LABELS: Record<PurchaseOrderStatus, string> =
   received: "Recebida",
   cancelled: "Cancelada",
 };
+
+// --- Controle de custos -------------------------------------------------------
+
+/**
+ * Comportamento do custo. Define para onde o gasto vai na formação de preço:
+ * - direct_variable: entra no custo unitário do produto (filamento, embalagem);
+ * - indirect_fixed: entra no overhead rateado por hora (aluguel, internet);
+ * - capex: investimento em ativo, entra amortizado como depreciação mensal.
+ */
+export const EXPENSE_CATEGORY_KINDS = ["direct_variable", "indirect_fixed", "capex"] as const;
+export type ExpenseCategoryKind = (typeof EXPENSE_CATEGORY_KINDS)[number];
+
+export const EXPENSE_CATEGORY_KIND_LABELS: Record<ExpenseCategoryKind, string> = {
+  direct_variable: "Custo variável",
+  indirect_fixed: "Custo fixo",
+  capex: "Investimento (ativo)",
+};
+
+/** O que a categoria movimenta quando a compra é recebida. */
+export const EXPENSE_CATEGORY_TARGETS = ["none", "filament", "supply", "asset"] as const;
+export type ExpenseCategoryTarget = (typeof EXPENSE_CATEGORY_TARGETS)[number];
+
+export const EXPENSE_CATEGORY_TARGET_LABELS: Record<ExpenseCategoryTarget, string> = {
+  none: "Nenhum (só despesa)",
+  filament: "Estoque de filamento",
+  supply: "Estoque de insumo",
+  asset: "Ativo (equipamento/ferramenta)",
+};
+
+export const MEASUREMENT_UNITS = ["g", "kg", "un", "cx", "m", "L", "ml", "h"] as const;
+export type MeasurementUnit = (typeof MEASUREMENT_UNITS)[number];
+
+export const MEASUREMENT_UNIT_LABELS: Record<MeasurementUnit, string> = {
+  g: "g",
+  kg: "kg",
+  un: "un",
+  cx: "cx",
+  m: "m",
+  L: "L",
+  ml: "ml",
+  h: "h",
+};
+
+export const SUPPLY_MOVEMENT_TYPES = ["purchase", "consumption", "adjustment", "waste"] as const;
+export type SupplyMovementType = (typeof SUPPLY_MOVEMENT_TYPES)[number];
+
+export const SUPPLY_MOVEMENT_TYPE_LABELS: Record<SupplyMovementType, string> = {
+  purchase: "Compra",
+  consumption: "Consumo",
+  adjustment: "Ajuste",
+  waste: "Perda",
+};
+
+export const ASSET_STATUSES = ["active", "maintenance", "retired"] as const;
+export type AssetStatus = (typeof ASSET_STATUSES)[number];
+
+export const ASSET_STATUS_LABELS: Record<AssetStatus, string> = {
+  active: "Em uso",
+  maintenance: "Em manutenção",
+  retired: "Baixado",
+};
+
+export const RECURRENCE_PERIODS = ["monthly", "yearly"] as const;
+export type RecurrencePeriod = (typeof RECURRENCE_PERIODS)[number];
+
+export const RECURRENCE_PERIOD_LABELS: Record<RecurrencePeriod, string> = {
+  monthly: "Mensal",
+  yearly: "Anual",
+};
+
+export const EXPENSE_PAYMENT_METHODS = ["pix", "card", "boleto", "cash", "transfer", "other"] as const;
+export type ExpensePaymentMethod = (typeof EXPENSE_PAYMENT_METHODS)[number];
+
+export const EXPENSE_PAYMENT_METHOD_LABELS: Record<ExpensePaymentMethod, string> = {
+  pix: "Pix",
+  card: "Cartão",
+  boleto: "Boleto",
+  cash: "Dinheiro",
+  transfer: "Transferência",
+  other: "Outro",
+};
+
+/** De onde o lançamento do livro de despesas veio. */
+export const EXPENSE_SOURCES = ["purchase_order", "recurring", "depreciation", "manual"] as const;
+export type ExpenseSource = (typeof EXPENSE_SOURCES)[number];
+
+export const EXPENSE_SOURCE_LABELS: Record<ExpenseSource, string> = {
+  purchase_order: "Compra",
+  recurring: "Despesa fixa",
+  depreciation: "Depreciação",
+  manual: "Lançamento manual",
+};

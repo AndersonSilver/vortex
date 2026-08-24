@@ -145,6 +145,33 @@ export function AdminSettingsPage() {
             />
           </div>
           <div className="form-group">
+            <label>Custo fixo por hora (overhead)</label>
+            <input
+              className="admin-input"
+              type="number"
+              step="0.01"
+              value={form.overheadCostPerHour}
+              onChange={(e) => set("overheadCostPerHour", Number(e.target.value))}
+            />
+          </div>
+          <div className="form-group">
+            <label>Horas produtivas por mês</label>
+            <input
+              className="admin-input"
+              type="number"
+              value={form.overheadHoursPerMonth}
+              onChange={(e) => set("overheadHoursPerMonth", Number(e.target.value))}
+            />
+          </div>
+          <div className="form-group" style={{ flexDirection: "row", alignItems: "center", gap: "1rem" }}>
+            <label style={{ margin: 0 }}>Usar taxas calculadas dos gastos reais</label>
+            <input
+              type="checkbox"
+              checked={form.autoCostRates}
+              onChange={(e) => set("autoCostRates", e.target.checked)}
+            />
+          </div>
+          <div className="form-group">
             <label>Taxa padrão de perda/falha (%)</label>
             <input
               className="admin-input"

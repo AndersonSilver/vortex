@@ -1,9 +1,10 @@
-import { In } from "typeorm";
-import type { ProductProfitDTO, SalesReportDTO } from "@vortex/shared";
+import { Between, In } from "typeorm";
+import type { ProductProfitDTO, ProfitLossReportDTO, SalesReportDTO } from "@vortex/shared";
 import { AppDataSource } from "../../config/data-source";
-import { OrderItem, Product } from "../../entities";
+import { ExpenseEntry, OrderItem, Product } from "../../entities";
 
 const orderItemRepo = () => AppDataSource.getRepository(OrderItem);
+const expenseRepo = () => AppDataSource.getRepository(ExpenseEntry);
 const productRepo = () => AppDataSource.getRepository(Product);
 
 function startOfDay(date: Date): Date {
@@ -131,5 +132,53 @@ export async function getSalesReport(from: Date, to: Date): Promise<SalesReportD
     marginPercent: revenue > 0 ? (profit / revenue) * 100 : 0,
     ordersCount: orderIds.size,
     byDay,
+  };
+}
+
+/**
+ * Demonstrativo de resultado do período. Diferente do resumo de despesas, aqui a
+ * compra de ativo não entra: o que pesa é a depreciação do mês, senão comprar uma
+ * impressora derrubaria o lucro de um mês só e mentiria nos seguintes.
+ */
+export async function getProfitLossReport(from: Date, to: Date): Promise<ProfitLossReportDTO> {
+  const sales = await getSalesReport(from, to);
+  const fromDay = from.toISOString().slice(0, 10);
+  const toDay = to.toISOString().slice(0, 10);
+  const entries = await expenseRepo().find({ where: { incurredAt: Between(fromDay, toDay) as unknown as string } });
+
+  let variableExpenses = 0;
+  let fixedExpenses = 0;
+  let depreciation = 0;
+  for (const entry of entries) {
+    const amount = Number(entry.amount);
+    if (entry.source === "depreciation") {
+      depreciation += amount;
+      continue;
+    }
+    const kind = entry.category?.kind ?? "indirect_fixed";
+    if (kind === "direct_variable") {
+      variableExpenses += amount;
+    } else if (kind === "indirect_fixed") {
+      fixedExpenses += amount;
+    }
+    // kind "capex" fica de fora: é investimento, aparece aqui só como depreciação.
+  }
+
+  const grossProfit = sales.revenue - sales.cost;
+  const totalExpenses = variableExpenses + fixedExpenses + depreciation;
+  const netProfit = grossProfit - totalExpenses;
+  return {
+    from: from.toISOString(),
+    to: to.toISOString(),
+    revenue: sales.revenue,
+    productCost: sales.cost,
+    grossProfit,
+    variableExpenses,
+    fixedExpenses,
+    depreciation,
+    totalExpenses,
+    netProfit,
+    netMarginPercent: sales.revenue > 0 ? (netProfit / sales.revenue) * 100 : 0,
+    ordersCount: sales.ordersCount,
   };
 }

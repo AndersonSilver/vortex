@@ -3,9 +3,12 @@ import { DataSource } from "typeorm";
 import { env } from "./env";
 import {
   Address,
+  Asset,
   CartItem,
   Coupon,
   CustomQuoteRequest,
+  ExpenseCategory,
+  ExpenseEntry,
   Filament,
   FilamentMovement,
   Order,
@@ -17,8 +20,11 @@ import {
   Product,
   PurchaseOrder,
   PurchaseOrderItem,
+  RecurringExpense,
   StoreSettings,
   Supplier,
+  Supply,
+  SupplyMovement,
   User,
 } from "../entities";
 
@@ -46,6 +52,12 @@ export const AppDataSource = new DataSource({
     Supplier,
     PurchaseOrder,
     PurchaseOrderItem,
+    ExpenseCategory,
+    Supply,
+    SupplyMovement,
+    Asset,
+    RecurringExpense,
+    ExpenseEntry,
   ],
   migrations: [__dirname + "/../migrations/*.{ts,js}"],
 });

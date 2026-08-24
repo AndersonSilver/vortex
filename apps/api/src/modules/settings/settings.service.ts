@@ -23,6 +23,9 @@ export function toStoreSettingsDTO(settings: StoreSettings): StoreSettingsDTO {
     laborCostPerHour: Number(settings.laborCostPerHour),
     defaultWasteRatePercent: Number(settings.defaultWasteRatePercent),
     defaultMarginPercent: Number(settings.defaultMarginPercent),
+    overheadCostPerHour: Number(settings.overheadCostPerHour),
+    overheadHoursPerMonth: settings.overheadHoursPerMonth,
+    autoCostRates: settings.autoCostRates,
   };
 }
 

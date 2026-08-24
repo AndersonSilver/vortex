@@ -25,6 +25,9 @@ import { AdminProductionPage } from "./pages/admin/AdminProductionPage";
 import { AdminFinancialReportsPage } from "./pages/admin/AdminFinancialReportsPage";
 import { AdminSuppliersPage } from "./pages/admin/AdminSuppliersPage";
 import { AdminPurchaseOrdersPage } from "./pages/admin/AdminPurchaseOrdersPage";
+import { AdminSuppliesPage } from "./pages/admin/AdminSuppliesPage";
+import { AdminAssetsPage } from "./pages/admin/AdminAssetsPage";
+import { AdminExpensesPage } from "./pages/admin/AdminExpensesPage";
 
 function StorefrontLayout() {
   return (
@@ -97,6 +100,9 @@ export function App() {
           <Route path="estoque" element={<AdminFilamentsPage />} />
           <Route path="fornecedores" element={<AdminSuppliersPage />} />
           <Route path="compras" element={<AdminPurchaseOrdersPage />} />
+          <Route path="insumos" element={<AdminSuppliesPage />} />
+          <Route path="ativos" element={<AdminAssetsPage />} />
+          <Route path="despesas" element={<AdminExpensesPage />} />
           <Route path="producao" element={<AdminProductionPage />} />
           <Route path="precificacao" element={<AdminPricingCalculatorPage />} />
           <Route path="financeiro" element={<AdminFinancialReportsPage />} />

@@ -5,6 +5,7 @@ import { useFilaments } from "../../hooks/useFilaments";
 import { useProducts, useUpdateProduct } from "../../hooks/useProducts";
 import { usePrinters } from "../../hooks/usePrinters";
 import { useStoreSettings } from "../../hooks/useSettings";
+import { useCostRates } from "../../hooks/useExpenses";
 import { useToast } from "../../components/Toast";
 
 // Potência de referência usada quando nenhuma impressora cadastrada é selecionada.
@@ -18,6 +19,7 @@ export function AdminPricingCalculatorPage() {
   const { data: products = [] } = useProducts("all", true);
   const { data: printers = [] } = usePrinters();
   const { data: settings } = useStoreSettings();
+  const { data: costRates } = useCostRates();
   const updateProduct = useUpdateProduct();
   const { showToast } = useToast();
 
@@ -41,7 +43,14 @@ export function AdminPricingCalculatorPage() {
     const packaging = parseFloat(packagingCost) || 0;
     const costPerGram = filament ? filament.costPerSpool / filament.spoolWeightGrams : 0;
     const electricityCostPerKwh = settings?.electricityCostPerKwh ?? 0.9;
-    const machineCostPerHour = settings?.machineCostPerHour ?? 2;
+    // Com taxas automáticas ligadas, valem os números derivados dos gastos reais.
+    const useAuto = settings?.autoCostRates && costRates;
+    const machineCostPerHour = useAuto
+      ? costRates!.suggestedMachineCostPerHour
+      : (settings?.machineCostPerHour ?? 2);
+    const overheadCostPerHour = useAuto
+      ? costRates!.suggestedOverheadCostPerHour
+      : (settings?.overheadCostPerHour ?? 0);
     const laborCostPerHour = settings?.laborCostPerHour ?? 20;
     const wattage = printer?.wattage ?? REFERENCE_PRINTER_WATTAGE;
 
@@ -49,7 +58,9 @@ export function AdminPricingCalculatorPage() {
     const energyCost = printHours * (wattage / 1000) * electricityCostPerKwh;
     const machineCost = printHours * machineCostPerHour;
     const laborCost = laborHours * laborCostPerHour;
-    const subtotal = materialCost + energyCost + machineCost + laborCost + packaging;
+    // O custo fixo é rateado pelas horas que a peça ocupa da operação.
+    const overheadCost = (printHours + laborHours) * overheadCostPerHour;
+    const subtotal = materialCost + energyCost + machineCost + laborCost + overheadCost + packaging;
     const costWithWaste = subtotal * (1 + wastePercent / 100);
     const suggestedPrice = marginPercent < 100 ? costWithWaste / (1 - marginPercent / 100) : costWithWaste;
     const printsPerSpool = filament && weight > 0 ? Math.floor(filament.spoolWeightGrams / weight) : null;
@@ -60,6 +71,7 @@ export function AdminPricingCalculatorPage() {
       energyCost,
       machineCost,
       laborCost,
+      overheadCost,
       packaging,
       subtotal,
       costWithWaste,
@@ -67,7 +79,7 @@ export function AdminPricingCalculatorPage() {
       printsPerSpool,
       wattage,
     };
-  }, [filament, printer, weightGrams, printTimeMinutes, laborMinutes, packagingCost, wastePercent, marginPercent, settings]);
+  }, [filament, printer, weightGrams, printTimeMinutes, laborMinutes, packagingCost, wastePercent, marginPercent, settings, costRates]);
 
   function handleApplyToProduct() {
     const product = products.find((p) => p.id === targetProductId);
@@ -199,6 +211,7 @@ export function AdminPricingCalculatorPage() {
             <div>Energia: R$ {result.energyCost.toFixed(2)} ({result.wattage}W)</div>
             <div>Máquina: R$ {result.machineCost.toFixed(2)}</div>
             <div>Mão de obra: R$ {result.laborCost.toFixed(2)}</div>
+            <div>Custo fixo rateado: R$ {result.overheadCost.toFixed(2)}</div>
             <div>Embalagem: R$ {result.packaging.toFixed(2)}</div>
             <div>Subtotal: R$ {result.subtotal.toFixed(2)}</div>
             <div>Custo com perda: R$ {result.costWithWaste.toFixed(2)}</div>

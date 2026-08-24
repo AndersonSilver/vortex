@@ -8,7 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
-import type { PurchaseOrderStatus } from "@vortex/shared";
+import type { ExpensePaymentMethod, PurchaseOrderStatus } from "@vortex/shared";
 import { PurchaseOrderItem } from "./PurchaseOrderItem";
 import { Supplier } from "./Supplier";
 
@@ -26,6 +26,29 @@ export class PurchaseOrder {
 
   @Column({ type: "varchar", default: "pending" })
   status!: PurchaseOrderStatus;
+
+  /** Número da nota fiscal ou do pedido no fornecedor. */
+  @Column({ name: "document_number", type: "varchar", nullable: true })
+  documentNumber?: string | null;
+
+  /** Data real da compra, independente de quando foi lançada no sistema. */
+  @Column({ name: "purchased_at", type: "date" })
+  purchasedAt!: string;
+
+  @Column({ name: "freight_cost", type: "numeric", precision: 12, scale: 2, default: 0 })
+  freightCost!: number;
+
+  @Column({ name: "other_charges", type: "numeric", precision: 12, scale: 2, default: 0 })
+  otherCharges!: number;
+
+  @Column({ type: "numeric", precision: 12, scale: 2, default: 0 })
+  discount!: number;
+
+  @Column({ name: "payment_method", type: "varchar", nullable: true })
+  paymentMethod?: ExpensePaymentMethod | null;
+
+  @Column({ type: "int", default: 1 })
+  installments!: number;
 
   @Column({ type: "text", nullable: true })
   notes?: string | null;

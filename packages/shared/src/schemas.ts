@@ -1,7 +1,12 @@
 import { z } from "zod";
 import {
+  ASSET_STATUSES,
   COUPON_TYPES,
   DISCOUNT_TYPES,
+  EXPENSE_CATEGORY_KINDS,
+  EXPENSE_CATEGORY_TARGETS,
+  EXPENSE_PAYMENT_METHODS,
+  EXPENSE_SOURCES,
   FILAMENT_MATERIALS,
   FILAMENT_MOVEMENT_TYPES,
   ORDER_STATUSES,
@@ -10,7 +15,10 @@ import {
   PRINT_JOB_STATUSES,
   PRODUCT_BADGES,
   PRODUCT_CATEGORIES,
+  MEASUREMENT_UNITS,
+  RECURRENCE_PERIODS,
   SHIPPING_METHODS,
+  SUPPLY_MOVEMENT_TYPES,
 } from "./enums";
 
 export const registerSchema = z.object({
@@ -168,6 +176,9 @@ export const storeSettingsSchema = z.object({
   laborCostPerHour: z.number().min(0),
   defaultWasteRatePercent: z.number().min(0).max(100),
   defaultMarginPercent: z.number().min(0).max(100),
+  overheadCostPerHour: z.number().min(0),
+  overheadHoursPerMonth: z.number().int().min(1).max(744),
+  autoCostRates: z.boolean(),
 });
 export type StoreSettingsInput = z.infer<typeof storeSettingsSchema>;
 
@@ -248,15 +259,43 @@ export const supplierSchema = z.object({
 });
 export type SupplierInput = z.infer<typeof supplierSchema>;
 
-export const purchaseOrderItemSchema = z.object({
-  filamentId: z.string().uuid(),
-  quantityGrams: z.number().int().positive(),
-  totalCost: z.number().positive(),
+/** Dados do ativo criado quando o item é de uma categoria capex. */
+export const purchaseOrderAssetSchema = z.object({
+  usefulLifeMonths: z.number().int().min(1).max(600),
+  salvageValue: z.number().min(0).default(0),
+  expectedHoursPerMonth: z.number().min(0).max(744).default(0),
+  printerId: z.string().uuid().nullable().optional(),
 });
+export type PurchaseOrderAssetInput = z.infer<typeof purchaseOrderAssetSchema>;
+
+export const purchaseOrderItemSchema = z
+  .object({
+    categoryId: z.string().uuid(),
+    description: z.string().max(200).nullable().optional(),
+    filamentId: z.string().uuid().nullable().optional(),
+    supplyId: z.string().uuid().nullable().optional(),
+    /** Cria um insumo novo já na compra, quando supplyId não é informado. */
+    newSupplyName: z.string().min(1).max(160).nullable().optional(),
+    asset: purchaseOrderAssetSchema.nullable().optional(),
+    quantity: z.number().positive(),
+    unit: z.enum(MEASUREMENT_UNITS),
+    totalCost: z.number().min(0),
+  })
+  .refine((item) => item.filamentId || item.supplyId || item.newSupplyName || item.description, {
+    message: "Informe o filamento, o insumo ou uma descrição para o item.",
+    path: ["description"],
+  });
 export type PurchaseOrderItemInput = z.infer<typeof purchaseOrderItemSchema>;
 
 export const purchaseOrderSchema = z.object({
   supplierId: z.string().uuid(),
+  documentNumber: z.string().max(60).nullable().optional(),
+  purchasedAt: z.string().min(1).optional(),
+  freightCost: z.number().min(0).default(0),
+  otherCharges: z.number().min(0).default(0),
+  discount: z.number().min(0).default(0),
+  paymentMethod: z.enum(EXPENSE_PAYMENT_METHODS).nullable().optional(),
+  installments: z.number().int().min(1).max(48).default(1),
   notes: z.string().max(2000).nullable().optional(),
   items: z.array(purchaseOrderItemSchema).min(1, "Adicione ao menos um item."),
 });
@@ -300,3 +339,93 @@ export const updateManualOrderDiscountSchema = z
     path: ["discountValue"],
   });
 export type UpdateManualOrderDiscountInput = z.infer<typeof updateManualOrderDiscountSchema>;
+
+// --- Controle de custos -------------------------------------------------------
+
+export const expenseCategorySchema = z.object({
+  name: z.string().min(1).max(120),
+  kind: z.enum(EXPENSE_CATEGORY_KINDS),
+  target: z.enum(EXPENSE_CATEGORY_TARGETS).default("none"),
+  emoji: z.string().max(8).default("💸"),
+  active: z.boolean().default(true),
+});
+export type ExpenseCategoryInput = z.infer<typeof expenseCategorySchema>;
+
+export const supplySchema = z.object({
+  name: z.string().min(1).max(160),
+  categoryId: z.string().uuid(),
+  unit: z.enum(MEASUREMENT_UNITS),
+  quantityOnHand: z.number().min(0).default(0),
+  avgUnitCost: z.number().min(0).default(0),
+  lowStockThreshold: z.number().min(0).default(0),
+  supplierId: z.string().uuid().nullable().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+  active: z.boolean().default(true),
+});
+export type SupplyInput = z.infer<typeof supplySchema>;
+
+export const supplyUpdateSchema = supplySchema.omit({ quantityOnHand: true, avgUnitCost: true });
+export type SupplyUpdateInput = z.infer<typeof supplyUpdateSchema>;
+
+export const supplyMovementSchema = z.object({
+  type: z.enum(SUPPLY_MOVEMENT_TYPES),
+  changeQuantity: z.number().refine((value) => value !== 0, "A quantidade não pode ser zero."),
+  unitCost: z.number().min(0).nullable().optional(),
+  reason: z.string().max(200).nullable().optional(),
+});
+export type SupplyMovementInput = z.infer<typeof supplyMovementSchema>;
+
+export const assetSchema = z.object({
+  name: z.string().min(1).max(160),
+  categoryId: z.string().uuid(),
+  printerId: z.string().uuid().nullable().optional(),
+  status: z.enum(ASSET_STATUSES).default("active"),
+  acquiredAt: z.string().min(1),
+  acquisitionCost: z.number().min(0),
+  salvageValue: z.number().min(0).default(0),
+  usefulLifeMonths: z.number().int().min(1).max(600),
+  expectedHoursPerMonth: z.number().min(0).max(744).default(0),
+  notes: z.string().max(2000).nullable().optional(),
+});
+export type AssetInput = z.infer<typeof assetSchema>;
+
+export const recurringExpenseSchema = z.object({
+  name: z.string().min(1).max(160),
+  categoryId: z.string().uuid(),
+  amount: z.number().min(0),
+  period: z.enum(RECURRENCE_PERIODS).default("monthly"),
+  dueDay: z.number().int().min(1).max(31).nullable().optional(),
+  startDate: z.string().min(1),
+  endDate: z.string().min(1).nullable().optional(),
+  supplierId: z.string().uuid().nullable().optional(),
+  paymentMethod: z.enum(EXPENSE_PAYMENT_METHODS).nullable().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+  active: z.boolean().default(true),
+});
+export type RecurringExpenseInput = z.infer<typeof recurringExpenseSchema>;
+
+export const expenseEntrySchema = z.object({
+  categoryId: z.string().uuid(),
+  description: z.string().min(1).max(200),
+  amount: z.number().min(0),
+  incurredAt: z.string().min(1),
+  supplierId: z.string().uuid().nullable().optional(),
+  paymentMethod: z.enum(EXPENSE_PAYMENT_METHODS).nullable().optional(),
+  attachmentUrl: z.string().url().max(500).nullable().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+});
+export type ExpenseEntryInput = z.infer<typeof expenseEntrySchema>;
+
+export const expenseQuerySchema = z.object({
+  from: z.string().optional(),
+  to: z.string().optional(),
+  categoryId: z.string().uuid().optional(),
+  source: z.enum(EXPENSE_SOURCES).optional(),
+});
+export type ExpenseQueryInput = z.infer<typeof expenseQuerySchema>;
+
+/** Gera os lançamentos de despesa fixa e depreciação de um mês (formato YYYY-MM). */
+export const postMonthSchema = z.object({
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Use o formato AAAA-MM."),
+});
+export type PostMonthInput = z.infer<typeof postMonthSchema>;

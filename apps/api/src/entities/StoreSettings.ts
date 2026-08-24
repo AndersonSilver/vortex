@@ -56,6 +56,18 @@ export class StoreSettings {
   @Column({ name: "default_margin_percent", type: "numeric", precision: 5, scale: 2, default: 40 })
   defaultMarginPercent!: number;
 
+  /** Custo fixo indireto rateado por hora produtiva. */
+  @Column({ name: "overhead_cost_per_hour", type: "numeric", precision: 10, scale: 2, default: 0 })
+  overheadCostPerHour!: number;
+
+  /** Horas produtivas por mês usadas para ratear o custo fixo. */
+  @Column({ name: "overhead_hours_per_month", type: "int", default: 160 })
+  overheadHoursPerMonth!: number;
+
+  /** Quando ligado, a precificação usa as taxas calculadas dos gastos reais. */
+  @Column({ name: "auto_cost_rates", type: "boolean", default: false })
+  autoCostRates!: boolean;
+
   @UpdateDateColumn({ name: "updated_at" })
   updatedAt!: Date;
 }
