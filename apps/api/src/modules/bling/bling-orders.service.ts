@@ -13,6 +13,14 @@ export interface ImportBlingOrdersResult {
   failed: Array<{ externalOrderId: string; error: string }>;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// One request every ~350ms stays comfortably under Bling's per-app rate limit for this bulk backfill
+// (the live webhook path ingests one order at a time and doesn't need this).
+const IMPORT_REQUEST_INTERVAL_MS = 350;
+
 /** One-time backfill for orders placed in Bling before the webhook was wired up. Safe to re-run —
  * createMarketplaceOrder is idempotent per (channel, externalOrderId). */
 export async function importHistoricalBlingOrders(sinceDate: string): Promise<ImportBlingOrdersResult> {
@@ -27,6 +35,7 @@ export async function importHistoricalBlingOrders(sinceDate: string): Promise<Im
     } catch (err) {
       result.failed.push({ externalOrderId: id, error: err instanceof Error ? err.message : String(err) });
     }
+    await sleep(IMPORT_REQUEST_INTERVAL_MS);
   }
 
   return result;

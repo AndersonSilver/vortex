@@ -28,14 +28,29 @@ interface BlingOrderDetail {
   };
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const RATE_LIMIT_MAX_RETRIES = 3;
+
 async function blingGet<T>(path: string, params?: Record<string, string | number>): Promise<T> {
   const accessToken = await ensureFreshBlingAccessToken();
-  const { data } = await axios.get<T>(`${env.bling.baseUrl}${path}`, {
-    timeout: 8000,
-    headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
-    params,
-  });
-  return data;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const { data } = await axios.get<T>(`${env.bling.baseUrl}${path}`, {
+        timeout: 8000,
+        headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+        params,
+      });
+      return data;
+    } catch (err) {
+      const status = axios.isAxiosError(err) ? err.response?.status : undefined;
+      if (status !== 429 || attempt >= RATE_LIMIT_MAX_RETRIES) throw err;
+      // Bling doesn't send Retry-After on this endpoint in practice — back off with a fixed ladder.
+      await sleep(1000 * (attempt + 1));
+    }
+  }
 }
 
 // Confirmed by looking up the CNPJ that showed up in a real order's `intermediador` field.
