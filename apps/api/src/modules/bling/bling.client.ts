@@ -3,19 +3,20 @@ import { env } from "../../config/env";
 import { ensureFreshBlingAccessToken } from "./bling-oauth.service";
 import type { BlingOrderItem, NormalizedBlingOrder } from "./bling-order.types";
 
-// Bling API v3 "Pedido de venda" response shape (subset used here). Field names per the general
-// v3 schema — re-check against a live response (GET /pedidos/vendas/{id} once OAuth is connected)
-// before relying on this in production, Bling's docs site doesn't expose a static schema to diff against.
+// Bling API v3 "Pedido de venda" response shape (subset used here), verified against a live
+// GET /pedidos/vendas/{id} response on 2026-08-26. `contato` never carried telefone/celular in
+// that sample — customerPhone ends up null for Bling orders until proven otherwise.
 interface BlingOrderDetail {
   id: number;
-  situacao?: { id: number; valor?: number };
-  loja?: { id: number };
-  contato?: { nome?: string; telefone?: string; celular?: string };
+  contato?: { nome?: string };
+  // Root CNPJ (first 8 digits) identifies which marketplace facilitated the sale — see
+  // MARKETPLACE_CNPJ_ROOTS below. Shopee/TikTok/Mercado Livre all route through Bling this way.
+  intermediador?: { cnpj?: string };
+  desconto?: { valor?: number };
   itens: Array<{ codigo: string; descricao: string; quantidade: number; valor: number }>;
   transporte?: {
     frete?: number;
     etiqueta?: {
-      nome?: string;
       endereco?: string;
       numero?: string;
       complemento?: string;
@@ -27,48 +28,39 @@ interface BlingOrderDetail {
   };
 }
 
-async function blingGet<T>(path: string): Promise<T> {
+async function blingGet<T>(path: string, params?: Record<string, string | number>): Promise<T> {
   const accessToken = await ensureFreshBlingAccessToken();
   const { data } = await axios.get<T>(`${env.bling.baseUrl}${path}`, {
     timeout: 8000,
     headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+    params,
   });
   return data;
 }
 
-// Store names rarely change mid-session; a tiny in-memory cache avoids one extra Bling call per order.
-const storeNameCache = new Map<number, string>();
+// Confirmed by looking up the CNPJ that showed up in a real order's `intermediador` field.
+// Add more roots here as new marketplaces show up (check the order's raw `intermediador.cnpj`).
+const MARKETPLACE_CNPJ_ROOTS: Record<string, string> = {
+  "27415911": "TikTok Shop", // Bytedance Brasil Tecnologia Ltda.
+};
 
-async function fetchStoreName(lojaId: number): Promise<string | null> {
-  const cached = storeNameCache.get(lojaId);
-  if (cached) return cached;
-  try {
-    const { data } = await blingGet<{ data: { descricao?: string; nome?: string } }>(`/lojas/${lojaId}`);
-    const name = data.descricao || data.nome || null;
-    if (name) storeNameCache.set(lojaId, name);
-    return name;
-  } catch (err) {
-    console.warn(`Não foi possível obter o nome da loja Bling ${lojaId}:`, err);
-    return null;
-  }
+function originLabelFromIntermediador(intermediador: BlingOrderDetail["intermediador"]): string | null {
+  const cnpjDigits = (intermediador?.cnpj || "").replace(/\D/g, "");
+  const root = cnpjDigits.slice(0, 8);
+  return MARKETPLACE_CNPJ_ROOTS[root] ?? null;
 }
 
 const LIST_PAGE_SIZE = 100;
 const LIST_MAX_PAGES = 50; // safety backstop — 5000 orders — not a real expected volume, just a runaway guard.
 
-/**
- * Lists sales order ids created in [sinceDate, today]. Paginates until a short page ends it.
- * Query param names/pagination shape per the general v3 "list" convention (`pagina`/`limite`) —
- * re-check against a live response once OAuth is connected.
- */
+/** Lists sales order ids created in [sinceDate, today]. Paginates until a short page ends it. */
 export async function fetchBlingOrderIds(sinceDate: string): Promise<string[]> {
   const ids: string[] = [];
   for (let pagina = 1; pagina <= LIST_MAX_PAGES; pagina++) {
-    const accessToken = await ensureFreshBlingAccessToken();
-    const { data } = await axios.get<{ data: Array<{ id: number }> }>(`${env.bling.baseUrl}/pedidos/vendas`, {
-      timeout: 8000,
-      headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
-      params: { pagina, limite: LIST_PAGE_SIZE, dataInicial: sinceDate },
+    const data = await blingGet<{ data: Array<{ id: number }> }>("/pedidos/vendas", {
+      pagina,
+      limite: LIST_PAGE_SIZE,
+      dataInicial: sinceDate,
     });
     const page = data.data ?? [];
     ids.push(...page.map((o) => String(o.id)));
@@ -88,13 +80,12 @@ export async function fetchBlingOrderDetail(orderId: string): Promise<Normalized
   }));
 
   const etiqueta = order.transporte?.etiqueta;
-  const originLabel = order.loja ? await fetchStoreName(order.loja.id) : null;
 
   return {
     externalOrderId: String(order.id),
-    originLabel,
-    customerName: etiqueta?.nome || order.contato?.nome || "Cliente Bling",
-    customerPhone: order.contato?.celular || order.contato?.telefone || null,
+    originLabel: originLabelFromIntermediador(order.intermediador),
+    customerName: order.contato?.nome || "Cliente Bling",
+    customerPhone: null,
     shippingCep: (etiqueta?.cep || "").replace(/\D/g, ""),
     shippingState: etiqueta?.uf || "",
     shippingCity: etiqueta?.municipio || "",
@@ -103,6 +94,7 @@ export async function fetchBlingOrderDetail(orderId: string): Promise<Normalized
     shippingNumber: etiqueta?.numero || "S/N",
     shippingComplement: etiqueta?.complemento || null,
     shippingCost: order.transporte?.frete ?? 0,
+    discount: order.desconto?.valor ?? 0,
     items,
   };
 }

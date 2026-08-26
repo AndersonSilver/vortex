@@ -59,7 +59,9 @@ export const env = {
     clientId: process.env.BLING_CLIENT_ID ?? "",
     clientSecret: process.env.BLING_CLIENT_SECRET ?? "",
     redirectUri: process.env.BLING_REDIRECT_URI ?? "http://localhost:3333/bling/callback",
-    baseUrl: "https://www.bling.com.br/Api/v3",
+    // Resource API must go through api.bling.com.br — Bling rejects JWT bearer calls made to
+    // www.bling.com.br with a 403 ("Acesso não permitido"). OAuth authorize/token stay on www.
+    baseUrl: "https://api.bling.com.br/Api/v3",
     authorizeUrl: "https://www.bling.com.br/Api/v3/oauth/authorize",
     tokenUrl: "https://www.bling.com.br/Api/v3/oauth/token",
   },

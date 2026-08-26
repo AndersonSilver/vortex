@@ -21,5 +21,7 @@ export interface NormalizedBlingOrder {
   shippingNumber: string;
   shippingComplement: string | null;
   shippingCost: number;
+  /** Order-level discount already reflected in Bling's own `total`, in R$ (not percent). */
+  discount: number;
   items: BlingOrderItem[];
 }

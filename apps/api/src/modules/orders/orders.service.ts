@@ -297,7 +297,7 @@ export async function createMarketplaceOrder(
   });
 
   const subtotal = calculateSubtotal(items.map((item) => ({ price: Number(item.priceSnapshot), qty: item.qty })));
-  const total = Math.max(0, subtotal + input.shippingCost);
+  const total = Math.max(0, subtotal - input.discount + input.shippingCost);
 
   const addressSnapshot: AddressDTO = {
     id: randomUUID(),
@@ -326,7 +326,9 @@ export async function createMarketplaceOrder(
     paymentMethod: "pix",
     paymentStatus: "approved",
     subtotal,
-    discount: 0,
+    discount: input.discount,
+    discountType: "fixed",
+    discountValue: input.discount,
     shippingCost: input.shippingCost,
     total,
     shippingMethod: "bling",
