@@ -14,6 +14,7 @@ export function toProductDTO(product: Product): ProductDTO {
   return {
     id: product.id,
     slug: product.slug,
+    sku: product.sku ?? null,
     name: product.name,
     category: product.category,
     description: product.description,

@@ -38,6 +38,18 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   cancelled: "Cancelado",
 };
 
+// "bling" = pedido importado via Bling ERP, que centraliza os pedidos de qualquer loja/marketplace
+// que o usuário conectar lá dentro (Shopee, TikTok Shop, Mercado Livre, etc) — ver Order.originLabel
+// para saber de qual loja dentro do Bling o pedido veio.
+export const ORDER_CHANNELS = ["site", "manual", "bling"] as const;
+export type OrderChannel = (typeof ORDER_CHANNELS)[number];
+
+export const ORDER_CHANNEL_LABELS: Record<OrderChannel, string> = {
+  site: "Site",
+  manual: "Manual",
+  bling: "Bling",
+};
+
 export const PAYMENT_METHODS = ["pix", "card", "boleto"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
@@ -50,7 +62,9 @@ export const PAYMENT_STATUSES = [
 ] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
-export const SHIPPING_METHODS = ["pac", "sedex", "pickup"] as const;
+// "bling" = frete/rastreio controlado pela própria loja de origem (Shopee/TikTok/Mercado Livre etc),
+// não pelos Correios/Melhor Envio do Vortex — usado nos pedidos importados via createMarketplaceOrder.
+export const SHIPPING_METHODS = ["pac", "sedex", "pickup", "bling"] as const;
 export type ShippingMethod = (typeof SHIPPING_METHODS)[number];
 
 export const COUPON_TYPES = ["percent", "fixed", "free_shipping"] as const;

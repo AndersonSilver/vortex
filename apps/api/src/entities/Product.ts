@@ -20,6 +20,12 @@ export class Product {
   @Column({ type: "varchar" })
   slug!: string;
 
+  // Matches the product "código" registered in Bling, used to resolve which local product a
+  // Bling sales order line item refers to.
+  @Index({ unique: true, where: '"sku" IS NOT NULL' })
+  @Column({ type: "varchar", nullable: true })
+  sku?: string | null;
+
   @Column({ type: "varchar" })
   name!: string;
 

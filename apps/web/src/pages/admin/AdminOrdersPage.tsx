@@ -7,6 +7,7 @@ import {
   PAYMENT_STATUSES,
   SHIPPING_METHODS,
   type DiscountType,
+  type OrderChannel,
   type OrderDTO,
   type OrderStatus,
   type PaymentMethod,
@@ -16,6 +17,7 @@ import {
 import {
   useAdminOrders,
   useCreateManualOrder,
+  useImportBlingOrders,
   useUpdateManualOrderDiscount,
   useUpdateOrderStatus,
   useUpdateOrderTracking,
@@ -46,6 +48,17 @@ const SHIPPING_METHOD_LABELS: Record<ShippingMethod, string> = {
   pac: "PAC",
   sedex: "SEDEX",
   pickup: "Retirada no local",
+  bling: "Loja de origem (Bling)",
+};
+
+// Pedidos manuais (criados pelo admin) usam frete próprio — "bling" só existe em pedidos
+// importados via webhook, não faz sentido oferecer no formulário de pedido manual.
+const MANUAL_ORDER_SHIPPING_METHODS = SHIPPING_METHODS.filter((m) => m !== "bling");
+
+const CHANNEL_BADGES: Record<OrderChannel, string> = {
+  site: "🌐 Site",
+  manual: "📱 Manual",
+  bling: "🧾 Bling",
 };
 
 const DISCOUNT_TYPE_LABELS: Record<DiscountType, string> = {
@@ -103,6 +116,7 @@ export function AdminOrdersPage() {
   const updateTracking = useUpdateOrderTracking();
   const updateManualDiscount = useUpdateManualOrderDiscount();
   const createManualOrder = useCreateManualOrder();
+  const importBlingOrders = useImportBlingOrders();
   const { showToast } = useToast();
   const [trackingInput, setTrackingInput] = useState("");
   const [discountEdit, setDiscountEdit] = useState<{ type: DiscountType; value: string }>({
@@ -315,6 +329,26 @@ export function AdminOrdersPage() {
     );
   }
 
+  function handleImportBling() {
+    importBlingOrders.mutate(undefined, {
+      onSuccess: (result) => {
+        if (result.failed.length > 0) {
+          showToast(
+            `${result.imported} pedido(s) importado(s), ${result.failed.length} falharam (SKU sem match).`,
+            "error",
+          );
+        } else {
+          showToast(
+            `${result.imported} pedido(s) importado(s) do Bling (${result.alreadyExisted} já existiam).`,
+            "success",
+          );
+        }
+      },
+      onError: (error) =>
+        showToast(extractErrorMessage(error, "Não foi possível importar pedidos do Bling."), "error"),
+    });
+  }
+
   return (
     <div>
       <div className="admin-header">
@@ -323,6 +357,9 @@ export function AdminOrdersPage() {
           <span className="search-icon">🔍</span>
           <input placeholder="Buscar pedido..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
+        <button className="btn-outline" onClick={handleImportBling} disabled={importBlingOrders.isPending}>
+          {importBlingOrders.isPending ? "Importando..." : "🧾 Importar do Bling"}
+        </button>
         <button className="btn-primary" onClick={openManualOrder}>
           + Novo Pedido
         </button>
@@ -366,7 +403,7 @@ export function AdminOrdersPage() {
                 <tr key={order.id}>
                   <td style={{ fontFamily: "Orbitron, monospace", fontSize: ".8rem", color: "var(--purple)" }}>
                     {order.orderNumber}
-                    {order.isManual && (
+                    {order.channel !== "site" && (
                       <div style={{ marginTop: ".2rem" }}>
                         <span
                           style={{
@@ -379,7 +416,8 @@ export function AdminOrdersPage() {
                             padding: ".1rem .5rem",
                           }}
                         >
-                          📱 Manual
+                          {CHANNEL_BADGES[order.channel]}
+                          {order.originLabel ? ` · ${order.originLabel}` : ""}
                         </span>
                       </div>
                     )}
@@ -801,7 +839,7 @@ export function AdminOrdersPage() {
               value={manualForm.shippingMethod}
               onChange={(e) => setManualForm({ ...manualForm, shippingMethod: e.target.value as ShippingMethod })}
             >
-              {SHIPPING_METHODS.map((method) => (
+              {MANUAL_ORDER_SHIPPING_METHODS.map((method) => (
                 <option key={method} value={method}>
                   {SHIPPING_METHOD_LABELS[method]}
                 </option>

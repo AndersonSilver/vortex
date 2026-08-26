@@ -55,6 +55,15 @@ export const env = {
     },
   },
 
+  bling: {
+    clientId: process.env.BLING_CLIENT_ID ?? "",
+    clientSecret: process.env.BLING_CLIENT_SECRET ?? "",
+    redirectUri: process.env.BLING_REDIRECT_URI ?? "http://localhost:3333/bling/callback",
+    baseUrl: "https://www.bling.com.br/Api/v3",
+    authorizeUrl: "https://www.bling.com.br/Api/v3/oauth/authorize",
+    tokenUrl: "https://www.bling.com.br/Api/v3/oauth/token",
+  },
+
   minio: {
     endpoint: process.env.MINIO_ENDPOINT ?? "http://localhost:9010",
     // URL used when returning file URLs to clients (browser). Inside Docker,

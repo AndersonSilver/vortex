@@ -15,6 +15,7 @@ import { calculateDiscount, calculateManualDiscount, calculateSubtotal, isCoupon
 import { getSettingsEntity } from "../settings/settings.service";
 import { quoteShipping } from "../shipping/shipping-provider.service";
 import { toAddressDTO } from "../addresses/addresses.routes";
+import type { NormalizedBlingOrder } from "../bling/bling-order.types";
 
 const orderRepo = () => AppDataSource.getRepository(Order);
 const cartRepo = () => AppDataSource.getRepository(CartItem);
@@ -59,6 +60,9 @@ export function toOrderDTO(order: Order): OrderDTO {
     customerEmail: order.customerEmail ?? null,
     customerPhone: order.customerPhone ?? null,
     isManual: order.isManual,
+    channel: order.channel,
+    externalOrderId: order.externalOrderId ?? null,
+    originLabel: order.originLabel ?? null,
     addressSnapshot: order.addressSnapshot ?? null,
     trackingCode: order.trackingCode ?? null,
     trackingUrl: order.trackingUrl ?? null,
@@ -156,6 +160,7 @@ export async function createOrder(userId: string, input: CreateOrderInput): Prom
     userId,
     customerName: user.name,
     customerEmail: user.email,
+    channel: "site",
     status: "pending",
     paymentMethod: input.paymentMethod,
     paymentStatus: "pending",
@@ -236,6 +241,7 @@ export async function createManualOrder(input: CreateManualOrderInput): Promise<
     customerEmail: input.customerEmail ?? null,
     customerPhone: input.customerPhone ?? null,
     isManual: true,
+    channel: "manual",
     status: input.status,
     paymentMethod: input.paymentMethod,
     paymentStatus: input.paymentStatus,
@@ -252,6 +258,84 @@ export async function createManualOrder(input: CreateManualOrderInput): Promise<
 
   const saved = await orderRepo().save(order);
   return toOrderDTO(saved);
+}
+
+/**
+ * Ingests an order pulled from Bling (which itself aggregates Shopee/TikTok Shop/Mercado Livre/etc).
+ * Idempotent: if this (channel, externalOrderId) pair already exists — Bling retried the webhook, or
+ * the order was pushed again on a status change — the existing order is returned untouched.
+ */
+export async function createMarketplaceOrder(
+  input: NormalizedBlingOrder,
+): Promise<{ order: OrderDTO; created: boolean }> {
+  const existing = await orderRepo().findOneBy({ channel: "bling", externalOrderId: input.externalOrderId });
+  if (existing) {
+    return { order: toOrderDTO(existing), created: false };
+  }
+
+  const skus = [...new Set(input.items.map((item) => item.sku))];
+  const products = await productRepo().find({ where: { sku: In(skus) } });
+  const productBySku = new Map(products.map((p) => [p.sku, p]));
+
+  const items = input.items.map((item) => {
+    const product = productBySku.get(item.sku);
+    if (!product) {
+      throw new HttpError(
+        422,
+        `SKU "${item.sku}" do pedido Bling ${input.externalOrderId} não corresponde a nenhum produto cadastrado.`,
+      );
+    }
+    return {
+      productId: product.id,
+      nameSnapshot: item.nameSnapshot,
+      priceSnapshot: item.priceSnapshot,
+      costPriceSnapshot: product.costPrice ?? null,
+      qty: item.qty,
+      color: product.colors[0] ?? "Padrão",
+      material: product.material,
+    };
+  });
+
+  const subtotal = calculateSubtotal(items.map((item) => ({ price: Number(item.priceSnapshot), qty: item.qty })));
+  const total = Math.max(0, subtotal + input.shippingCost);
+
+  const addressSnapshot: AddressDTO = {
+    id: randomUUID(),
+    label: input.originLabel ?? "Bling",
+    cep: input.shippingCep,
+    state: input.shippingState,
+    city: input.shippingCity,
+    neighborhood: input.shippingNeighborhood,
+    street: input.shippingStreet,
+    number: input.shippingNumber,
+    complement: input.shippingComplement,
+  };
+
+  const orderNumber = await generateOrderNumber();
+
+  const order = orderRepo().create({
+    orderNumber,
+    userId: null,
+    customerName: input.customerName,
+    customerPhone: input.customerPhone,
+    channel: "bling",
+    externalOrderId: input.externalOrderId,
+    originLabel: input.originLabel,
+    status: "pending",
+    // Bling only pushes orders that already went through, marketplace payment already settled.
+    paymentMethod: "pix",
+    paymentStatus: "approved",
+    subtotal,
+    discount: 0,
+    shippingCost: input.shippingCost,
+    total,
+    shippingMethod: "bling",
+    addressSnapshot,
+    items,
+  });
+
+  const saved = await orderRepo().save(order);
+  return { order: toOrderDTO(saved), created: true };
 }
 
 export async function updateManualOrderDiscount(

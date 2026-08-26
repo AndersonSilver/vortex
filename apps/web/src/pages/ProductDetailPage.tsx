@@ -14,6 +14,7 @@ const SHIPPING_LABELS: Record<ShippingMethod, { icon: string; title: string }> =
   pac: { icon: "📦", title: "PAC" },
   sedex: { icon: "⚡", title: "SEDEX" },
   pickup: { icon: "🏠", title: "Retirada no local" },
+  bling: { icon: "🧾", title: "Loja de origem (Bling)" },
 };
 
 function estimatedArrivalLabel(days: number) {

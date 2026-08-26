@@ -4,6 +4,7 @@ import { env } from "./env";
 import {
   Address,
   Asset,
+  BlingCredential,
   CartItem,
   Coupon,
   CustomQuoteRequest,
@@ -36,6 +37,7 @@ export const AppDataSource = new DataSource({
   entities: [
     User,
     Address,
+    BlingCredential,
     Product,
     CartItem,
     Coupon,

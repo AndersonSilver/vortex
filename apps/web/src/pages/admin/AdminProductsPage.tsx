@@ -19,6 +19,7 @@ const MAX_PRODUCT_IMAGES = 5;
 
 interface ProductFormState {
   name: string;
+  sku: string;
   category: ProductCategoryKey;
   price: string;
   oldPrice: string;
@@ -35,6 +36,7 @@ interface ProductFormState {
 
 const EMPTY_FORM: ProductFormState = {
   name: "",
+  sku: "",
   category: "figurines",
   price: "",
   oldPrice: "",
@@ -78,6 +80,7 @@ export function AdminProductsPage() {
     setEditing(product);
     setForm({
       name: product.name,
+      sku: product.sku ?? "",
       category: product.category,
       price: String(product.price),
       oldPrice: product.oldPrice ? String(product.oldPrice) : "",
@@ -126,6 +129,7 @@ export function AdminProductsPage() {
     }
     const input = {
       name: form.name,
+      sku: form.sku.trim() || null,
       category: form.category,
       price,
       oldPrice: form.oldPrice ? parseFloat(form.oldPrice) : null,
@@ -315,6 +319,15 @@ export function AdminProductsPage() {
               value={form.oldPrice}
               onChange={(e) => setForm({ ...form, oldPrice: e.target.value })}
               placeholder="Opcional"
+            />
+          </div>
+          <div className="form-group">
+            <label>SKU (para vincular pedidos importados do Bling)</label>
+            <input
+              className="admin-input"
+              value={form.sku}
+              onChange={(e) => setForm({ ...form, sku: e.target.value })}
+              placeholder="Opcional — precisa bater com o código do produto cadastrado no Bling"
             />
           </div>
           <div className="form-group">

@@ -8,6 +8,7 @@ import type {
   ExpensePaymentMethod,
   ExpenseSource,
   MeasurementUnit,
+  OrderChannel,
   RecurrencePeriod,
   SupplyMovementType,
   FilamentMaterialType,
@@ -31,6 +32,7 @@ export interface ProductSpecs {
 export interface ProductDTO {
   id: string;
   slug: string;
+  sku: string | null;
   name: string;
   category: ProductCategoryKey;
   description: string;
@@ -125,6 +127,9 @@ export interface OrderDTO {
   customerEmail: string | null;
   customerPhone: string | null;
   isManual: boolean;
+  channel: OrderChannel;
+  externalOrderId: string | null;
+  originLabel: string | null;
   addressSnapshot: AddressDTO | null;
   trackingCode: string | null;
   trackingUrl: string | null;

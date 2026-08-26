@@ -11,6 +11,7 @@ import { shippingRouter } from "./modules/shipping/shipping.routes";
 import { ordersRouter } from "./modules/orders/orders.routes";
 import { paymentsRouter } from "./modules/payments/payments.routes";
 import { webhooksRouter } from "./modules/webhooks/webhooks.routes";
+import { blingRouter } from "./modules/bling/bling.routes";
 import { quotesRouter } from "./modules/quotes/quotes.routes";
 import { mediaRouter } from "./modules/media/media.routes";
 import { adminRouter } from "./modules/admin/admin.routes";
@@ -41,7 +42,15 @@ export function createApp() {
       credentials: true,
     }),
   );
-  app.use(express.json());
+  app.use(
+    express.json({
+      // Bling's webhook signature is HMAC'd over the exact request bytes — stash them before
+      // body-parsing re-serializes anything (see webhooks.routes.ts's rawBodyOf).
+      verify: (req, _res, buf) => {
+        (req as express.Request & { rawBody?: Buffer }).rawBody = buf;
+      },
+    }),
+  );
 
   app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
@@ -54,6 +63,7 @@ export function createApp() {
   app.use("/orders", ordersRouter);
   app.use("/payments", paymentsRouter);
   app.use("/webhooks", webhooksRouter);
+  app.use("/bling", blingRouter);
   app.use("/quotes", quotesRouter);
   app.use("/media", mediaRouter);
   app.use("/admin", adminRouter);

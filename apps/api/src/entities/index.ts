@@ -22,3 +22,4 @@ export * from "./SupplyMovement";
 export * from "./Asset";
 export * from "./RecurringExpense";
 export * from "./ExpenseEntry";
+export * from "./BlingCredential";

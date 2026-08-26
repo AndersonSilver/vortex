@@ -101,6 +101,27 @@ export function useUpdateOrderTracking() {
   });
 }
 
+export interface ImportBlingOrdersResult {
+  found: number;
+  imported: number;
+  alreadyExisted: number;
+  failed: Array<{ externalOrderId: string; error: string }>;
+}
+
+export function useImportBlingOrders() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post<ImportBlingOrdersResult>("/bling/import-orders", {});
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "orders"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
+    },
+  });
+}
+
 export function useUpdateManualOrderDiscount() {
   const queryClient = useQueryClient();
   return useMutation({

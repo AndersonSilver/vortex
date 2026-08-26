@@ -11,6 +11,7 @@ import {
 import type {
   AddressDTO,
   DiscountType,
+  OrderChannel,
   OrderStatus,
   PaymentMethod,
   PaymentStatus,
@@ -46,6 +47,19 @@ export class Order {
 
   @Column({ name: "is_manual", type: "boolean", default: false })
   isManual!: boolean;
+
+  @Column({ type: "varchar", default: "site" })
+  channel!: OrderChannel;
+
+  // Bling's own sales order id. Unique per channel so a retried/duplicated webhook never
+  // registers the same order twice (see orders.service.createMarketplaceOrder).
+  @Column({ name: "external_order_id", type: "varchar", nullable: true })
+  externalOrderId?: string | null;
+
+  // Which store *inside* Bling the order came from (Shopee, TikTok Shop, Mercado Livre, ...) —
+  // display-only, Bling normalizes everything into the same order shape regardless of origin.
+  @Column({ name: "origin_label", type: "varchar", nullable: true })
+  originLabel?: string | null;
 
   @Column({ type: "varchar", default: "pending" })
   status!: OrderStatus;
