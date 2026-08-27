@@ -135,6 +135,7 @@ export interface OrderDTO {
   addressSnapshot: AddressDTO | null;
   trackingCode: string | null;
   trackingUrl: string | null;
+  viewedAt: string | null;
   items: OrderItemDTO[];
   createdAt: string;
 }

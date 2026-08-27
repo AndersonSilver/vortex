@@ -86,6 +86,19 @@ export function useUpdateOrderStatus() {
   });
 }
 
+export function useMarkOrderViewed() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.patch<OrderDTO>(`/orders/${id}/viewed`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "orders"] });
+    },
+  });
+}
+
 export function useUpdateOrderTracking() {
   const queryClient = useQueryClient();
   return useMutation({

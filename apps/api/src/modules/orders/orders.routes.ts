@@ -68,6 +68,15 @@ ordersRouter.patch(
 );
 
 ordersRouter.patch(
+  "/:id/viewed",
+  requireRole("admin"),
+  asyncHandler(async (req, res) => {
+    const order = await ordersService.markOrderViewed(req.params.id);
+    res.json(order);
+  }),
+);
+
+ordersRouter.patch(
   "/:id/tracking",
   requireRole("admin"),
   validateBody(updateOrderTrackingSchema),

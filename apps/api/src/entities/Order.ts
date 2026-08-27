@@ -109,6 +109,10 @@ export class Order {
   @Column({ name: "tracking_url", type: "varchar", nullable: true })
   trackingUrl?: string | null;
 
+  // Null = admin hasn't opened this order yet — drives the "🆕 Novo" badge in the admin list.
+  @Column({ name: "viewed_at", type: "timestamptz", nullable: true })
+  viewedAt?: Date | null;
+
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true, eager: true })
   items!: OrderItem[];
 

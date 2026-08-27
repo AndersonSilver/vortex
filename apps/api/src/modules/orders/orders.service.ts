@@ -67,6 +67,7 @@ export function toOrderDTO(order: Order): OrderDTO {
     addressSnapshot: order.addressSnapshot ?? null,
     trackingCode: order.trackingCode ?? null,
     trackingUrl: order.trackingUrl ?? null,
+    viewedAt: order.viewedAt ? order.viewedAt.toISOString() : null,
     items: order.items.map(toOrderItemDTO),
     createdAt: order.createdAt.toISOString(),
   };
@@ -398,6 +399,16 @@ export async function updateOrderStatus(id: string, status: Order["status"]): Pr
   order.status = status;
   const saved = await orderRepo().save(order);
   return toOrderDTO(saved);
+}
+
+export async function markOrderViewed(id: string): Promise<OrderDTO> {
+  const order = await orderRepo().findOneBy({ id });
+  if (!order) throw new HttpError(404, "Pedido não encontrado.");
+  if (!order.viewedAt) {
+    order.viewedAt = new Date();
+    await orderRepo().save(order);
+  }
+  return toOrderDTO(order);
 }
 
 export async function updateOrderTracking(

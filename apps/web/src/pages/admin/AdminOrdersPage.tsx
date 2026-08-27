@@ -18,6 +18,7 @@ import {
   useAdminOrders,
   useCreateManualOrder,
   useImportBlingOrders,
+  useMarkOrderViewed,
   useUpdateManualOrderDiscount,
   useUpdateOrderStatus,
   useUpdateOrderTracking,
@@ -132,6 +133,7 @@ export function AdminOrdersPage() {
   const updateManualDiscount = useUpdateManualOrderDiscount();
   const createManualOrder = useCreateManualOrder();
   const importBlingOrders = useImportBlingOrders();
+  const markOrderViewed = useMarkOrderViewed();
   const { showToast } = useToast();
   const [trackingInput, setTrackingInput] = useState("");
   const [discountEdit, setDiscountEdit] = useState<{ type: DiscountType; value: string }>({
@@ -425,7 +427,33 @@ export function AdminOrdersPage() {
               filtered.map((order) => (
                 <tr key={order.id}>
                   <td style={{ fontFamily: "Orbitron, monospace", fontSize: ".8rem", color: "var(--purple)", whiteSpace: "nowrap" }}>
+                    {!order.viewedAt && (
+                      <span
+                        title="Pedido novo, ainda não visto"
+                        style={{
+                          display: "inline-block",
+                          width: "8px",
+                          height: "8px",
+                          borderRadius: "50%",
+                          background: "var(--purple)",
+                          marginRight: ".4rem",
+                        }}
+                      />
+                    )}
                     {order.orderNumber}
+                    {!order.viewedAt && (
+                      <span
+                        style={{
+                          marginLeft: ".4rem",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: ".62rem",
+                          fontWeight: 700,
+                          color: "var(--purple)",
+                        }}
+                      >
+                        NOVO
+                      </span>
+                    )}
                     {order.channel !== "site" && (
                       <div style={{ marginTop: ".2rem" }}>
                         <span
@@ -489,7 +517,13 @@ export function AdminOrdersPage() {
                     </select>
                   </td>
                   <td>
-                    <button className="action-btn" onClick={() => setViewOrder(order)}>
+                    <button
+                      className="action-btn"
+                      onClick={() => {
+                        setViewOrder(order);
+                        if (!order.viewedAt) markOrderViewed.mutate(order.id);
+                      }}
+                    >
                       👁 Ver
                     </button>
                   </td>
