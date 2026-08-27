@@ -398,6 +398,7 @@ export function AdminOrdersPage() {
           <thead>
             <tr>
               <th>Pedido</th>
+              <th>Nº Shopee/TikTok</th>
               <th>Cliente</th>
               <th>Itens</th>
               <th>Valor</th>
@@ -409,7 +410,7 @@ export function AdminOrdersPage() {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={7} style={{ color: "var(--text-muted)" }}>
+                <td colSpan={8} style={{ color: "var(--text-muted)" }}>
                   Carregando...
                 </td>
               </tr>
@@ -437,6 +438,9 @@ export function AdminOrdersPage() {
                         </span>
                       </div>
                     )}
+                  </td>
+                  <td style={{ fontFamily: "Orbitron, monospace", fontSize: ".8rem", whiteSpace: "nowrap" }}>
+                    {order.marketplaceOrderNumber ?? "—"}
                   </td>
                   <td>
                     {order.customerName}

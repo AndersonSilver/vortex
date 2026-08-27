@@ -130,6 +130,7 @@ export interface OrderDTO {
   isManual: boolean;
   channel: OrderChannel;
   externalOrderId: string | null;
+  marketplaceOrderNumber: string | null;
   originLabel: string | null;
   addressSnapshot: AddressDTO | null;
   trackingCode: string | null;

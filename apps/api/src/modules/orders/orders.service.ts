@@ -62,6 +62,7 @@ export function toOrderDTO(order: Order): OrderDTO {
     isManual: order.isManual,
     channel: order.channel,
     externalOrderId: order.externalOrderId ?? null,
+    marketplaceOrderNumber: order.marketplaceOrderNumber ?? null,
     originLabel: order.originLabel ?? null,
     addressSnapshot: order.addressSnapshot ?? null,
     trackingCode: order.trackingCode ?? null,
@@ -323,6 +324,7 @@ export async function createMarketplaceOrder(
     customerPhone: input.customerPhone,
     channel: "bling",
     externalOrderId: input.externalOrderId,
+    marketplaceOrderNumber: input.marketplaceOrderNumber,
     originLabel: input.originLabel,
     status: input.status,
     // Bling only pushes orders that already went through, marketplace payment already settled.

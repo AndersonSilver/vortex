@@ -11,6 +11,8 @@ interface BlingOrderDetail {
   id: number;
   /** Order date, "YYYY-MM-DD" — the actual purchase date on the marketplace. */
   data?: string;
+  /** The marketplace's own order number/SN (Shopee/TikTok Shop), not Bling's internal id. */
+  numeroLoja?: string;
   contato?: { nome?: string };
   // Custom per-account status (id is account-specific — matched by name instead, see
   // situacaoToOrderStatus below).
@@ -137,6 +139,7 @@ export async function fetchBlingOrderDetail(orderId: string): Promise<Normalized
 
   return {
     externalOrderId: String(order.id),
+    marketplaceOrderNumber: order.numeroLoja || null,
     originLabel: originLabelFromIntermediador(order.intermediador),
     customerName: order.contato?.nome || "Cliente Bling",
     customerPhone: null,

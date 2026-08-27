@@ -61,6 +61,12 @@ export class Order {
   @Column({ name: "origin_label", type: "varchar", nullable: true })
   originLabel?: string | null;
 
+  // The marketplace's own order number (Bling's `numeroLoja`) — what the seller sees on
+  // Shopee/TikTok Shop itself, distinct from externalOrderId (Bling's internal pedido id) and
+  // orderNumber (Vortex's own VX-###### code).
+  @Column({ name: "marketplace_order_number", type: "varchar", nullable: true })
+  marketplaceOrderNumber?: string | null;
+
   @Column({ type: "varchar", default: "pending" })
   status!: OrderStatus;
 

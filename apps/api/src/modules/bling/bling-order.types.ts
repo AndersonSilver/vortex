@@ -11,6 +11,8 @@ export interface BlingOrderItem {
 export interface NormalizedBlingOrder {
   /** Bling's own sales order id. */
   externalOrderId: string;
+  /** The marketplace's own order number/SN (Shopee/TikTok Shop) — what the seller sees there. */
+  marketplaceOrderNumber: string | null;
   /** Name of the store inside Bling this order came from (Shopee, TikTok Shop, Mercado Livre, ...). */
   originLabel: string | null;
   customerName: string;
