@@ -9,6 +9,8 @@ import type { BlingOrderItem, NormalizedBlingOrder } from "./bling-order.types";
 // that sample — customerPhone ends up null for Bling orders until proven otherwise.
 interface BlingOrderDetail {
   id: number;
+  /** Order date, "YYYY-MM-DD" — the actual purchase date on the marketplace. */
+  data?: string;
   contato?: { nome?: string };
   // Custom per-account status (id is account-specific — matched by name instead, see
   // situacaoToOrderStatus below).
@@ -148,6 +150,7 @@ export async function fetchBlingOrderDetail(orderId: string): Promise<Normalized
     shippingCost: order.transporte?.frete ?? 0,
     discount: order.desconto?.valor ?? 0,
     status,
+    purchasedAt: order.data || new Date().toISOString().slice(0, 10),
     items,
   };
 }

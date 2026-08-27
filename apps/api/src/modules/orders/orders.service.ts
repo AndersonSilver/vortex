@@ -337,6 +337,9 @@ export async function createMarketplaceOrder(
     shippingMethod: "bling",
     addressSnapshot,
     items,
+    // Overrides the @CreateDateColumn default — the Pedidos list sorts/displays by this, and it
+    // should read the real purchase date on the marketplace, not whenever this import ran.
+    createdAt: new Date(input.purchasedAt),
   });
 
   const saved = await orderRepo().save(order);

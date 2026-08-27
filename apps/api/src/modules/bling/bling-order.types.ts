@@ -26,5 +26,7 @@ export interface NormalizedBlingOrder {
   /** Order-level discount already reflected in Bling's own `total`, in R$ (not percent). */
   discount: number;
   status: OrderStatus;
+  /** The actual purchase date on the marketplace (Bling's `data`), not whenever it got imported. */
+  purchasedAt: string;
   items: BlingOrderItem[];
 }
