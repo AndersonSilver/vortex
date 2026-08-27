@@ -1,3 +1,5 @@
+import type { OrderStatus } from "@vortex/shared";
+
 export interface BlingOrderItem {
   /** Bling item "código" — matched against Product.sku. */
   sku: string;
@@ -23,5 +25,6 @@ export interface NormalizedBlingOrder {
   shippingCost: number;
   /** Order-level discount already reflected in Bling's own `total`, in R$ (not percent). */
   discount: number;
+  status: OrderStatus;
   items: BlingOrderItem[];
 }

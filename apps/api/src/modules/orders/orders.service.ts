@@ -30,7 +30,7 @@ const BASE_DIMENSIONS_CM = { lengthCm: 20, widthCm: 15, heightCm: 10 };
 function toOrderItemDTO(item: OrderItem): OrderItemDTO {
   return {
     id: item.id,
-    productId: item.productId,
+    productId: item.productId ?? null,
     name: item.nameSnapshot,
     price: Number(item.priceSnapshot),
     costPrice:
@@ -284,22 +284,18 @@ export async function createMarketplaceOrder(
     }
   }
 
+  // No match is fine — the order still gets imported with this line item unlinked from the
+  // catalog (see OrderItem.productId), just without cost/color/material data to snapshot.
   const items = input.items.map((item) => {
     const product = productByAlias.get(item.sku.trim()) ?? productByAlias.get(item.nameSnapshot.trim());
-    if (!product) {
-      throw new HttpError(
-        422,
-        `Item "${item.nameSnapshot}" (SKU "${item.sku}") do pedido Bling ${input.externalOrderId} não corresponde a nenhum produto cadastrado.`,
-      );
-    }
     return {
-      productId: product.id,
+      productId: product?.id ?? null,
       nameSnapshot: item.nameSnapshot,
       priceSnapshot: item.priceSnapshot,
-      costPriceSnapshot: product.costPrice ?? null,
+      costPriceSnapshot: product?.costPrice ?? null,
       qty: item.qty,
-      color: product.colors[0] ?? "Padrão",
-      material: product.material,
+      color: product?.colors[0] ?? "—",
+      material: product?.material ?? "—",
     };
   });
 
@@ -328,7 +324,7 @@ export async function createMarketplaceOrder(
     channel: "bling",
     externalOrderId: input.externalOrderId,
     originLabel: input.originLabel,
-    status: "pending",
+    status: input.status,
     // Bling only pushes orders that already went through, marketplace payment already settled.
     paymentMethod: "pix",
     paymentStatus: "approved",

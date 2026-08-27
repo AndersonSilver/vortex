@@ -1,4 +1,5 @@
 import axios from "axios";
+import type { OrderStatus } from "@vortex/shared";
 import { env } from "../../config/env";
 import { ensureFreshBlingAccessToken } from "./bling-oauth.service";
 import type { BlingOrderItem, NormalizedBlingOrder } from "./bling-order.types";
@@ -9,6 +10,9 @@ import type { BlingOrderItem, NormalizedBlingOrder } from "./bling-order.types";
 interface BlingOrderDetail {
   id: number;
   contato?: { nome?: string };
+  // Custom per-account status (id is account-specific — matched by name instead, see
+  // situacaoToOrderStatus below).
+  situacao?: { id: number };
   // Root CNPJ (first 8 digits) identifies which marketplace facilitated the sale — see
   // MARKETPLACE_CNPJ_ROOTS below. Shopee/TikTok/Mercado Livre all route through Bling this way.
   intermediador?: { cnpj?: string };
@@ -65,6 +69,37 @@ function originLabelFromIntermediador(intermediador: BlingOrderDetail["intermedi
   return MARKETPLACE_CNPJ_ROOTS[root] ?? null;
 }
 
+// Bling situações are custom per account (ids aren't portable), but each has a stable free-text
+// `nome` — matched by keyword, checked most-specific first. Confirmed against this account's real
+// situação 885939 = "Aguardando Envio" on 2026-08-26; add more as new names show up in logs.
+function situacaoNameToOrderStatus(nome: string): OrderStatus {
+  const n = nome.toLowerCase();
+  if (n.includes("cancelad")) return "cancelled";
+  if (n.includes("entregue")) return "delivered";
+  if (n.includes("enviado") || n.includes("despachado") || n.includes("caminho")) return "shipped";
+  if (n.includes("aguardando envio") || n.includes("separa") || n.includes("embala") || n.includes("verificad"))
+    return "printing";
+  return "pending";
+}
+
+// Situação set is small and fixed per account — cache indefinitely, one extra call per distinct
+// status instead of per order.
+const situacaoNameCache = new Map<number, string>();
+
+async function fetchSituacaoStatus(situacaoId: number): Promise<OrderStatus> {
+  const cached = situacaoNameCache.get(situacaoId);
+  if (cached) return situacaoNameToOrderStatus(cached);
+  try {
+    const data = await blingGet<{ data: { nome?: string } }>(`/situacoes/${situacaoId}`);
+    const nome = data.data.nome ?? "";
+    situacaoNameCache.set(situacaoId, nome);
+    return situacaoNameToOrderStatus(nome);
+  } catch (err) {
+    console.warn(`Não foi possível obter a situação Bling ${situacaoId}:`, err);
+    return "pending";
+  }
+}
+
 const LIST_PAGE_SIZE = 100;
 const LIST_MAX_PAGES = 50; // safety backstop — 5000 orders — not a real expected volume, just a runaway guard.
 
@@ -95,6 +130,7 @@ export async function fetchBlingOrderDetail(orderId: string): Promise<Normalized
   }));
 
   const etiqueta = order.transporte?.etiqueta;
+  const status = order.situacao ? await fetchSituacaoStatus(order.situacao.id) : "pending";
 
   return {
     externalOrderId: String(order.id),
@@ -110,6 +146,7 @@ export async function fetchBlingOrderDetail(orderId: string): Promise<Normalized
     shippingComplement: etiqueta?.complemento || null,
     shippingCost: order.transporte?.frete ?? 0,
     discount: order.desconto?.valor ?? 0,
+    status,
     items,
   };
 }

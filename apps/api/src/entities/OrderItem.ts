@@ -19,8 +19,10 @@ export class OrderItem {
   @Column({ name: "order_id", type: "uuid" })
   orderId!: string;
 
-  @Column({ name: "product_id", type: "uuid" })
-  productId!: string;
+  // Null when a Bling order item couldn't be matched to a local product (no SKU/alias hit) —
+  // the order still gets imported, just without a catalog link for this line item.
+  @Column({ name: "product_id", type: "uuid", nullable: true })
+  productId?: string | null;
 
   @Column({ name: "name_snapshot", type: "varchar" })
   nameSnapshot!: string;

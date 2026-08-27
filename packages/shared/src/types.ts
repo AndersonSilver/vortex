@@ -101,7 +101,7 @@ export interface CouponDTO {
 
 export interface OrderItemDTO {
   id: string;
-  productId: string;
+  productId: string | null;
   name: string;
   price: number;
   costPrice: number | null;

@@ -15,7 +15,7 @@ function startOfDay(date: Date): Date {
 
 interface ItemFinancial {
   orderId: string;
-  productId: string;
+  productId: string | null;
   name: string;
   qty: number;
   revenue: number;
@@ -32,7 +32,7 @@ export async function getOrderItemsWithCost(from: Date, to: Date): Promise<ItemF
     .andWhere("order.status != :cancelled", { cancelled: "cancelled" })
     .getMany();
 
-  const productIds = Array.from(new Set(items.map((item) => item.productId)));
+  const productIds = Array.from(new Set(items.map((item) => item.productId).filter((id) => id !== null)));
   const products = productIds.length
     ? await productRepo().find({ where: { id: In(productIds) }, select: ["id", "costPrice"] })
     : [];
@@ -41,14 +41,15 @@ export async function getOrderItemsWithCost(from: Date, to: Date): Promise<ItemF
   );
 
   return items.map((item) => {
+    const productId = item.productId ?? null;
     const revenue = Number(item.priceSnapshot) * item.qty;
     const unitCost =
       item.costPriceSnapshot !== null && item.costPriceSnapshot !== undefined
         ? Number(item.costPriceSnapshot)
-        : (costMap.get(item.productId) ?? 0);
+        : (costMap.get(productId ?? "") ?? 0);
     return {
       orderId: item.orderId,
-      productId: item.productId,
+      productId,
       name: item.nameSnapshot,
       qty: item.qty,
       revenue,
@@ -63,6 +64,9 @@ export async function getProductProfitReport(from: Date, to: Date): Promise<Prod
 
   const map = new Map<string, { name: string; unitsSold: number; revenue: number; cost: number }>();
   for (const item of items) {
+    // Bling order items without a matched product have no id to group by — they still count
+    // toward the sales/profit totals elsewhere, just not broken out per product here.
+    if (item.productId === null) continue;
     const existing = map.get(item.productId) ?? { name: item.name, unitsSold: 0, revenue: 0, cost: 0 };
     existing.unitsSold += item.qty;
     existing.revenue += item.revenue;
