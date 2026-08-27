@@ -20,11 +20,16 @@ export class Product {
   @Column({ type: "varchar" })
   slug!: string;
 
-  // Matches the product "código" registered in Bling, used to resolve which local product a
-  // Bling sales order line item refers to.
+  // Primary marketplace SKU, shown in the admin form. Matched against a Bling order item's código.
   @Index({ unique: true, where: '"sku" IS NOT NULL' })
   @Column({ type: "varchar", nullable: true })
   sku?: string | null;
+
+  // Extra identifiers that also mean "this product" on a Bling order item — other SKU codes from
+  // different marketplace listings/variants of the same item, and/or the exact item description
+  // text when the marketplace integration doesn't send a SKU at all (common in practice).
+  @Column({ name: "marketplace_aliases", type: "jsonb", default: () => "'[]'" })
+  marketplaceAliases!: string[];
 
   @Column({ type: "varchar" })
   name!: string;

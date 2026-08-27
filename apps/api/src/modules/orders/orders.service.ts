@@ -273,16 +273,23 @@ export async function createMarketplaceOrder(
     return { order: toOrderDTO(existing), created: false };
   }
 
-  const skus = [...new Set(input.items.map((item) => item.sku))];
-  const products = await productRepo().find({ where: { sku: In(skus) } });
-  const productBySku = new Map(products.map((p) => [p.sku, p]));
+  // Bling order items often carry no SKU at all, and the same product shows up under different
+  // SKUs per marketplace listing/variant — so matching keys on either the SKU or the exact item
+  // description, against a product's sku plus its curated marketplaceAliases list.
+  const allProducts = await productRepo().find();
+  const productByAlias = new Map<string, Product>();
+  for (const product of allProducts) {
+    for (const alias of [product.sku, ...product.marketplaceAliases]) {
+      if (alias) productByAlias.set(alias.trim(), product);
+    }
+  }
 
   const items = input.items.map((item) => {
-    const product = productBySku.get(item.sku);
+    const product = productByAlias.get(item.sku.trim()) ?? productByAlias.get(item.nameSnapshot.trim());
     if (!product) {
       throw new HttpError(
         422,
-        `SKU "${item.sku}" do pedido Bling ${input.externalOrderId} não corresponde a nenhum produto cadastrado.`,
+        `Item "${item.nameSnapshot}" (SKU "${item.sku}") do pedido Bling ${input.externalOrderId} não corresponde a nenhum produto cadastrado.`,
       );
     }
     return {

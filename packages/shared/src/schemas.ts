@@ -51,6 +51,7 @@ export type AddressInput = z.infer<typeof addressSchema>;
 export const productSchema = z.object({
   name: z.string().min(2).max(160),
   sku: z.string().trim().min(1).max(64).nullable().optional(),
+  marketplaceAliases: z.array(z.string().trim().min(1)).default([]),
   category: z.enum(PRODUCT_CATEGORIES),
   description: z.string().min(1),
   price: z.number().positive(),

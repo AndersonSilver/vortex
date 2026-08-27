@@ -89,6 +89,8 @@ export function AdminPricingCalculatorPage() {
     }
     const input: ProductInput = {
       name: product.name,
+      sku: product.sku,
+      marketplaceAliases: product.marketplaceAliases,
       category: product.category,
       description: product.description,
       price: Number(result.suggestedPrice.toFixed(2)),

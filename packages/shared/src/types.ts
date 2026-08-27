@@ -33,6 +33,7 @@ export interface ProductDTO {
   id: string;
   slug: string;
   sku: string | null;
+  marketplaceAliases: string[];
   name: string;
   category: ProductCategoryKey;
   description: string;

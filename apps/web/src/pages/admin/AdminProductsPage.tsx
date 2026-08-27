@@ -20,6 +20,7 @@ const MAX_PRODUCT_IMAGES = 5;
 interface ProductFormState {
   name: string;
   sku: string;
+  marketplaceAliases: string;
   category: ProductCategoryKey;
   price: string;
   oldPrice: string;
@@ -37,6 +38,7 @@ interface ProductFormState {
 const EMPTY_FORM: ProductFormState = {
   name: "",
   sku: "",
+  marketplaceAliases: "",
   category: "figurines",
   price: "",
   oldPrice: "",
@@ -81,6 +83,7 @@ export function AdminProductsPage() {
     setForm({
       name: product.name,
       sku: product.sku ?? "",
+      marketplaceAliases: product.marketplaceAliases.join("\n"),
       category: product.category,
       price: String(product.price),
       oldPrice: product.oldPrice ? String(product.oldPrice) : "",
@@ -130,6 +133,10 @@ export function AdminProductsPage() {
     const input = {
       name: form.name,
       sku: form.sku.trim() || null,
+      marketplaceAliases: form.marketplaceAliases
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean),
       category: form.category,
       price,
       oldPrice: form.oldPrice ? parseFloat(form.oldPrice) : null,
@@ -328,6 +335,19 @@ export function AdminProductsPage() {
               value={form.sku}
               onChange={(e) => setForm({ ...form, sku: e.target.value })}
               placeholder="Opcional — precisa bater com o código do produto cadastrado no Bling"
+            />
+          </div>
+          <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+            <label>Outros identificadores do marketplace (um por linha)</label>
+            <textarea
+              className="admin-input"
+              rows={3}
+              value={form.marketplaceAliases}
+              onChange={(e) => setForm({ ...form, marketplaceAliases: e.target.value })}
+              placeholder={
+                "Outros SKUs de variantes/anúncios diferentes, ou o texto exato do nome do item\n" +
+                "que aparece no pedido quando o marketplace não manda SKU nenhum."
+              }
             />
           </div>
           <div className="form-group">
