@@ -416,12 +416,13 @@ export function AdminOrdersPage() {
             ) : (
               filtered.map((order) => (
                 <tr key={order.id}>
-                  <td style={{ fontFamily: "Orbitron, monospace", fontSize: ".8rem", color: "var(--purple)" }}>
+                  <td style={{ fontFamily: "Orbitron, monospace", fontSize: ".8rem", color: "var(--purple)", whiteSpace: "nowrap" }}>
                     {order.orderNumber}
                     {order.channel !== "site" && (
                       <div style={{ marginTop: ".2rem" }}>
                         <span
                           style={{
+                            display: "inline-block",
                             fontFamily: "Inter, sans-serif",
                             fontSize: ".68rem",
                             color: "var(--text-muted)",
@@ -429,6 +430,7 @@ export function AdminOrdersPage() {
                             border: "1px solid var(--border)",
                             borderRadius: "999px",
                             padding: ".1rem .5rem",
+                            whiteSpace: "nowrap",
                           }}
                         >
                           {channelBadgeText(order)}
@@ -443,8 +445,13 @@ export function AdminOrdersPage() {
                       {order.customerEmail ?? order.customerPhone ?? "—"}
                     </small>
                   </td>
-                  <td style={{ fontSize: ".82rem", color: "var(--text-muted)" }}>
-                    {order.items.map((i) => `${i.name} x${i.qty}`).join(", ")}
+                  <td style={{ fontSize: ".82rem", color: "var(--text-muted)", maxWidth: "220px" }}>
+                    <div
+                      title={order.items.map((i) => `${i.name} x${i.qty}`).join(", ")}
+                      style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                    >
+                      {order.items.map((i) => `${i.name} x${i.qty}`).join(", ")}
+                    </div>
                   </td>
                   <td>
                     <strong>R$ {order.total.toFixed(2)}</strong>

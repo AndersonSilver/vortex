@@ -61,6 +61,7 @@ async function blingGet<T>(path: string, params?: Record<string, string | number
 // Add more roots here as new marketplaces show up (check the order's raw `intermediador.cnpj`).
 const MARKETPLACE_CNPJ_ROOTS: Record<string, string> = {
   "27415911": "TikTok Shop", // Bytedance Brasil Tecnologia Ltda.
+  "35635824": "Shopee", // Shps Tecnologia e Serviços Ltda.
 };
 
 function originLabelFromIntermediador(intermediador: BlingOrderDetail["intermediador"]): string | null {
