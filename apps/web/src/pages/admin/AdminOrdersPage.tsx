@@ -61,6 +61,21 @@ const CHANNEL_BADGES: Record<OrderChannel, string> = {
   bling: "🧾 Bling",
 };
 
+// Known marketplace names that come through Bling's originLabel — shown on their own, without
+// the generic "Bling" badge, since the platform name is what's actually useful here.
+const ORIGIN_LABEL_ICONS: Record<string, string> = {
+  Shopee: "🛒",
+  "TikTok Shop": "🎵",
+};
+
+function channelBadgeText(order: OrderDTO): string {
+  if (order.channel === "bling" && order.originLabel) {
+    const icon = ORIGIN_LABEL_ICONS[order.originLabel] ?? "🧾";
+    return `${icon} ${order.originLabel}`;
+  }
+  return CHANNEL_BADGES[order.channel];
+}
+
 const DISCOUNT_TYPE_LABELS: Record<DiscountType, string> = {
   percent: "Percentual (%)",
   fixed: "Valor Fixo (R$)",
@@ -416,8 +431,7 @@ export function AdminOrdersPage() {
                             padding: ".1rem .5rem",
                           }}
                         >
-                          {CHANNEL_BADGES[order.channel]}
-                          {order.originLabel ? ` · ${order.originLabel}` : ""}
+                          {channelBadgeText(order)}
                         </span>
                       </div>
                     )}
