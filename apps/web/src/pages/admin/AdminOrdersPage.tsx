@@ -294,12 +294,15 @@ export function AdminOrdersPage() {
     );
   }
 
-  const filtered = orders.filter(
-    (o) =>
-      !search ||
-      o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
-      o.customerName.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filtered = orders.filter((o) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      o.orderNumber.toLowerCase().includes(q) ||
+      o.customerName.toLowerCase().includes(q) ||
+      (o.marketplaceOrderNumber?.toLowerCase().includes(q) ?? false)
+    );
+  });
 
   function handleStatusChange(orderId: string, status: OrderStatus) {
     updateStatus.mutate(
@@ -370,7 +373,11 @@ export function AdminOrdersPage() {
         <h1>Pedidos</h1>
         <div className="search-wrap">
           <span className="search-icon">🔍</span>
-          <input placeholder="Buscar pedido..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input
+            placeholder="Buscar por pedido, cliente ou nº Shopee/TikTok..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
         <button className="btn-outline" onClick={handleImportBling} disabled={importBlingOrders.isPending}>
           {importBlingOrders.isPending ? "Importando..." : "🧾 Importar do Bling"}
