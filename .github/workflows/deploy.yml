@@ -31,12 +31,19 @@ jobs:
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             ./ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/"
 
-      - name: Build and restart containers on server
+      - name: Build, migrate and restart containers on server
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "
             set -e
             cd '${{ secrets.DEPLOY_PATH }}'
             docker compose -f docker-compose.prod.yml --env-file .env.production build
+
+            # Migra antes de trocar os containers: 'run --rm' sobe só o postgres como dependência
+            # e espera o healthcheck. Com 'set -e', migration quebrada aborta o deploy e a versão
+            # antiga continua no ar em vez de rodar contra um schema que não é o dela.
+            docker compose -f docker-compose.prod.yml --env-file .env.production run --rm -T \
+              api node ./node_modules/typeorm/cli.js migration:run -d dist/config/data-source.js
+
             docker compose -f docker-compose.prod.yml --env-file .env.production up -d
             docker image prune -f
           "
