@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { ShippingMethod } from "@vortex/shared";
 import { useProduct, useProducts } from "../hooks/useProducts";
-import { ProductCard, categoryLabel } from "../components/ProductCard";
+import { ProductCard } from "../components/ProductCard";
+import { useCategoryLabel } from "../hooks/useProductCategories";
 import { useAddToCart } from "../hooks/useCart";
 import { useShippingQuote } from "../hooks/useShipping";
 import { useToast } from "../components/Toast";
@@ -32,6 +33,7 @@ export function ProductDetailPage() {
   const shippingQuote = useShippingQuote();
   const { showToast } = useToast();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const categoryLabel = useCategoryLabel();
 
   const [color, setColor] = useState<string | null>(null);
   const [qty, setQty] = useState(1);

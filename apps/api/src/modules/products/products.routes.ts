@@ -1,14 +1,16 @@
 import { Router } from "express";
-import { productSchema, type ProductDTO, type ProductCategoryKey, type ProductInput } from "@vortex/shared";
+import { productSchema, type ProductDTO, type ProductInput } from "@vortex/shared";
 import { AppDataSource } from "../../config/data-source";
-import { Product } from "../../entities";
+import { Product, ProductCategory } from "../../entities";
 import { requireAuth, requireRole } from "../../middleware/auth";
 import { validateBody } from "../../middleware/validate";
 import { asyncHandler, HttpError } from "../../utils/async-handler";
+import { slugify, uniqueSlug } from "../../utils/slug";
 
 export const productsRouter = Router();
 
 const productRepo = () => AppDataSource.getRepository(Product);
+const categoryRepo = () => AppDataSource.getRepository(ProductCategory);
 
 export function toProductDTO(product: Product): ProductDTO {
   return {
@@ -40,26 +42,22 @@ export function toProductDTO(product: Product): ProductDTO {
   };
 }
 
-const DIACRITICS_REGEX = /[̀-ͯ]/g;
-
-function slugify(name: string): string {
-  return name
-    .normalize("NFD")
-    .replace(DIACRITICS_REGEX, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+/** O produto guarda o slug da categoria, então ela precisa existir antes de gravar. */
+async function assertCategoryExists(slug: string): Promise<void> {
+  if (!(await categoryRepo().findOneBy({ slug }))) {
+    throw new HttpError(400, "Categoria de produto não encontrada.");
+  }
 }
 
 productsRouter.get(
   "/",
   asyncHandler(async (req, res) => {
     const { category, includeInactive } = req.query as {
-      category?: ProductCategoryKey;
+      category?: string;
       includeInactive?: string;
     };
     const where: Record<string, unknown> = {};
-    if (category && category !== ("all" as ProductCategoryKey)) {
+    if (category && category !== "all") {
       where.category = category;
     }
     if (includeInactive !== "true") {
@@ -87,13 +85,9 @@ productsRouter.post(
   requireRole("admin"),
   validateBody(productSchema),
   asyncHandler(async (req, res) => {
-    const baseSlug = slugify(req.body.name);
-    let slug = baseSlug;
-    let suffix = 1;
-    while (await productRepo().findOneBy({ slug })) {
-      slug = `${baseSlug}-${++suffix}`;
-    }
     const body = req.body as ProductInput;
+    await assertCategoryExists(body.category);
+    const slug = await uniqueSlug(slugify(body.name), async (candidate) => !!(await productRepo().findOneBy({ slug: candidate })));
     const imageUrl = body.images.length > 0 ? body.images[0] : (body.imageUrl ?? null);
     const product = await productRepo().save(productRepo().create({ ...body, imageUrl, slug }));
     res.status(201).json(toProductDTO(product));
@@ -111,6 +105,7 @@ productsRouter.put(
       throw new HttpError(404, "Produto não encontrado.");
     }
     const body = req.body as ProductInput;
+    await assertCategoryExists(body.category);
     const imageUrl = body.images.length > 0 ? body.images[0] : (body.imageUrl ?? null);
     Object.assign(product, body, { imageUrl });
     await productRepo().save(product);

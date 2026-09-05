@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import type { ProductDTO } from "@vortex/shared";
 import { useAddToCart } from "../hooks/useCart";
+import { useCategoryLabel } from "../hooks/useProductCategories";
 import { useToast } from "./Toast";
 import { useAuthStore } from "../state/auth-store";
 
@@ -11,6 +12,7 @@ export function ProductCard({ product }: { product: ProductDTO }) {
   const addToCart = useAddToCart();
   const { showToast } = useToast();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const categoryLabel = useCategoryLabel();
 
   function handleAddToCart(e: React.MouseEvent) {
     e.stopPropagation();
@@ -66,16 +68,4 @@ export function ProductCard({ product }: { product: ProductDTO }) {
       </div>
     </div>
   );
-}
-
-const CATEGORY_LABELS: Record<string, string> = {
-  figurines: "Miniaturas",
-  industrial: "Industrial",
-  decor: "Decoração",
-  tech: "Tech",
-  toys: "Brinquedos",
-};
-
-export function categoryLabel(cat: string): string {
-  return CATEGORY_LABELS[cat] ?? cat;
 }

@@ -1,23 +1,6 @@
 export const USER_ROLES = ["customer", "admin"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
-export const PRODUCT_CATEGORIES = [
-  "figurines",
-  "industrial",
-  "decor",
-  "tech",
-  "toys",
-] as const;
-export type ProductCategoryKey = (typeof PRODUCT_CATEGORIES)[number];
-
-export const PRODUCT_CATEGORY_LABELS: Record<ProductCategoryKey, string> = {
-  figurines: "Miniaturas",
-  industrial: "Industrial",
-  decor: "Decoração",
-  tech: "Tech",
-  toys: "Brinquedos",
-};
-
 export const PRODUCT_BADGES = ["new", "hot", "sale"] as const;
 export type ProductBadge = (typeof PRODUCT_BADGES)[number];
 

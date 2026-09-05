@@ -8,7 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
-import type { ProductBadge, ProductCategoryKey, ProductSpecs } from "@vortex/shared";
+import type { ProductBadge, ProductSpecs } from "@vortex/shared";
 import { Filament } from "./Filament";
 
 @Entity({ name: "products" })
@@ -34,8 +34,9 @@ export class Product {
   @Column({ type: "varchar" })
   name!: string;
 
+  /** Slug de ProductCategory. Sem FK: a categoria pode sumir, o histórico do produto não. */
   @Column({ type: "varchar" })
-  category!: ProductCategoryKey;
+  category!: string;
 
   @Column({ type: "text" })
   description!: string;

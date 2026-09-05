@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ProductCategoryKey, ProductDTO, ProductInput } from "@vortex/shared";
+import type { ProductDTO, ProductInput } from "@vortex/shared";
 import { api } from "../lib/api-client";
 
-export function useProducts(category?: ProductCategoryKey | "all", includeInactive = false) {
+export function useProducts(category?: string, includeInactive = false) {
   return useQuery({
     queryKey: ["products", category, includeInactive],
     queryFn: async () => {

@@ -14,7 +14,6 @@ import {
   PAYMENT_STATUSES,
   PRINT_JOB_STATUSES,
   PRODUCT_BADGES,
-  PRODUCT_CATEGORIES,
   MEASUREMENT_UNITS,
   RECURRENCE_PERIODS,
   SHIPPING_METHODS,
@@ -52,7 +51,8 @@ export const productSchema = z.object({
   name: z.string().min(2).max(160),
   sku: z.string().trim().min(1).max(64).nullable().optional(),
   marketplaceAliases: z.array(z.string().trim().min(1)).default([]),
-  category: z.enum(PRODUCT_CATEGORIES),
+  /** Slug de uma categoria cadastrada; a existência é conferida na rota. */
+  category: z.string().min(1).max(60),
   description: z.string().min(1),
   price: z.number().positive(),
   oldPrice: z.number().positive().nullable().optional(),
@@ -72,6 +72,14 @@ export const productSchema = z.object({
   costPrice: z.number().positive().nullable().optional(),
 });
 export type ProductInput = z.infer<typeof productSchema>;
+
+export const productCategorySchema = z.object({
+  name: z.string().min(1).max(120),
+  emoji: z.string().max(8).default("📦"),
+  sortOrder: z.number().int().min(0).max(999).default(0),
+  active: z.boolean().default(true),
+});
+export type ProductCategoryInput = z.infer<typeof productCategorySchema>;
 
 export const cartAddItemSchema = z.object({
   productId: z.string().uuid(),

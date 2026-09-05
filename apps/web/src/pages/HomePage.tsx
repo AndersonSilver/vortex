@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { PRODUCT_CATEGORIES, type ProductCategoryKey } from "@vortex/shared";
 import { useProducts } from "../hooks/useProducts";
-import { ProductCard, categoryLabel } from "../components/ProductCard";
+import { useProductCategories } from "../hooks/useProductCategories";
+import { ProductCard } from "../components/ProductCard";
 import { CustomQuoteModal } from "../components/CustomQuoteModal";
 
 const TESTIMONIALS = [
@@ -23,9 +23,13 @@ const TESTIMONIALS = [
 ];
 
 export function HomePage() {
-  const [category, setCategory] = useState<ProductCategoryKey | "all">("all");
+  const [category, setCategory] = useState<string>("all");
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const { data: products = [], isLoading } = useProducts(category);
+  // Pede a lista toda (inativa em uso vem junto, para o card do produto ter o rótulo)
+  // e mostra como filtro só o que está ativo.
+  const { data: categories = [] } = useProductCategories(true);
+  const visibleCategories = categories.filter((cat) => cat.active);
 
   return (
     <div>
@@ -109,13 +113,13 @@ export function HomePage() {
             <button className={`cat-btn${category === "all" ? " active" : ""}`} onClick={() => setCategory("all")}>
               Todos
             </button>
-            {PRODUCT_CATEGORIES.map((cat) => (
+            {visibleCategories.map((cat) => (
               <button
-                key={cat}
-                className={`cat-btn${category === cat ? " active" : ""}`}
-                onClick={() => setCategory(cat)}
+                key={cat.slug}
+                className={`cat-btn${category === cat.slug ? " active" : ""}`}
+                onClick={() => setCategory(cat.slug)}
               >
-                {categoryLabel(cat)}
+                {cat.name}
               </button>
             ))}
           </div>
@@ -213,15 +217,11 @@ export function HomePage() {
           </div>
           <div className="footer-col">
             <h4>Produtos</h4>
-            <a href="#catalog" onClick={() => setCategory("figurines")}>
-              Miniaturas
-            </a>
-            <a href="#catalog" onClick={() => setCategory("industrial")}>
-              Industrial
-            </a>
-            <a href="#catalog" onClick={() => setCategory("decor")}>
-              Decoração
-            </a>
+            {visibleCategories.slice(0, 3).map((cat) => (
+              <a key={cat.slug} href="#catalog" onClick={() => setCategory(cat.slug)}>
+                {cat.name}
+              </a>
+            ))}
             <a href="#custom">Personalizado</a>
           </div>
         </div>

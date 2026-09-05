@@ -1,6 +1,7 @@
 export * from "./User";
 export * from "./Address";
 export * from "./Product";
+export * from "./ProductCategory";
 export * from "./CartItem";
 export * from "./Coupon";
 export * from "./Order";

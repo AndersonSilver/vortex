@@ -20,7 +20,6 @@ import type {
   PrintJobStatus,
   ProductBadge,
   PurchaseOrderStatus,
-  ProductCategoryKey,
   ShippingMethod,
   UserRole,
 } from "./enums";
@@ -29,13 +28,28 @@ export interface ProductSpecs {
   [label: string]: string;
 }
 
+/** Categoria do catálogo, cadastrada pelo admin. O slug é o que fica gravado no produto. */
+export interface ProductCategoryDTO {
+  id: string;
+  slug: string;
+  name: string;
+  emoji: string;
+  sortOrder: number;
+  active: boolean;
+  /** Quantos produtos usam a categoria, contando os inativos. */
+  productsCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ProductDTO {
   id: string;
   slug: string;
   sku: string | null;
   marketplaceAliases: string[];
   name: string;
-  category: ProductCategoryKey;
+  /** Slug de ProductCategoryDTO. */
+  category: string;
   description: string;
   price: number;
   oldPrice: number | null;

@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { PRODUCT_CATEGORIES, type ProductDTO, type ProductCategoryKey, type ProductBadge } from "@vortex/shared";
+import type { ProductCategoryDTO, ProductDTO, ProductBadge } from "@vortex/shared";
 import {
   useCreateProduct,
   useDeactivateProduct,
@@ -8,20 +8,41 @@ import {
   useToggleProductActive,
   useUpdateProduct,
 } from "../../hooks/useProducts";
+import {
+  useCreateProductCategory,
+  useDeleteProductCategory,
+  useProductCategories,
+  useUpdateProductCategory,
+} from "../../hooks/useProductCategories";
 import { useFilaments } from "../../hooks/useFilaments";
 import { useUploadProductImage, useUploadProductVideo } from "../../hooks/useMedia";
-import { categoryLabel } from "../../components/ProductCard";
 import { Modal } from "../../components/Modal";
 import { useToast } from "../../components/Toast";
 
 const MATERIAL_OPTIONS = ["PLA", "PETG", "ABS", "Resina", "Nylon", "TPU", "Conforme projeto"];
 const MAX_PRODUCT_IMAGES = 5;
 
+type Tab = "products" | "categories";
+
+const TABS: Array<{ key: Tab; label: string }> = [
+  { key: "products", label: "Produtos" },
+  { key: "categories", label: "Categorias" },
+];
+
+interface CategoryFormState {
+  name: string;
+  emoji: string;
+  sortOrder: string;
+  active: boolean;
+}
+
+const EMPTY_CATEGORY_FORM: CategoryFormState = { name: "", emoji: "📦", sortOrder: "0", active: true };
+
 interface ProductFormState {
   name: string;
   sku: string;
   marketplaceAliases: string;
-  category: ProductCategoryKey;
+  category: string;
   price: string;
   oldPrice: string;
   emoji: string;
@@ -39,7 +60,7 @@ const EMPTY_FORM: ProductFormState = {
   name: "",
   sku: "",
   marketplaceAliases: "",
-  category: "figurines",
+  category: "",
   price: "",
   oldPrice: "",
   emoji: "📦",
@@ -56,6 +77,7 @@ const EMPTY_FORM: ProductFormState = {
 export function AdminProductsPage() {
   const navigate = useNavigate();
   const { data: products = [], isLoading } = useProducts("all", true);
+  const { data: categories = [] } = useProductCategories(true);
   const { data: filaments = [] } = useFilaments();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
@@ -63,18 +85,28 @@ export function AdminProductsPage() {
   const toggleActive = useToggleProductActive();
   const uploadImage = useUploadProductImage();
   const uploadVideo = useUploadProductVideo();
+  const createCategory = useCreateProductCategory();
+  const updateCategory = useUpdateProductCategory();
+  const deleteCategory = useDeleteProductCategory();
   const { showToast } = useToast();
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
+  const [tab, setTab] = useState<Tab>("products");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ProductDTO | null>(null);
   const [form, setForm] = useState<ProductFormState>(EMPTY_FORM);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<ProductCategoryDTO | null>(null);
+  const [categoryForm, setCategoryForm] = useState<CategoryFormState>(EMPTY_CATEGORY_FORM);
+
+  const activeCategories = categories.filter((category) => category.active);
+  const categoryLabel = (slug: string) => categories.find((c) => c.slug === slug)?.name ?? slug;
 
   function openCreate() {
     setEditing(null);
-    setForm(EMPTY_FORM);
+    setForm({ ...EMPTY_FORM, category: activeCategories[0]?.slug ?? "" });
     setModalOpen(true);
   }
 
@@ -130,6 +162,10 @@ export function AdminProductsPage() {
       showToast("Preencha nome e preço.", "error");
       return;
     }
+    if (!form.category) {
+      showToast("Escolha uma categoria para o produto.", "error");
+      return;
+    }
     const input = {
       name: form.name,
       sku: form.sku.trim() || null,
@@ -164,6 +200,51 @@ export function AdminProductsPage() {
       .catch(() => showToast("Não foi possível salvar o produto.", "error"));
   }
 
+  function openCategoryModal(category: ProductCategoryDTO | null) {
+    setEditingCategory(category);
+    setCategoryForm(
+      category
+        ? { name: category.name, emoji: category.emoji, sortOrder: String(category.sortOrder), active: category.active }
+        : { ...EMPTY_CATEGORY_FORM, sortOrder: String(categories.length + 1) },
+    );
+    setCategoryModalOpen(true);
+  }
+
+  function handleSaveCategory() {
+    if (!categoryForm.name.trim()) {
+      showToast("Informe o nome da categoria.", "error");
+      return;
+    }
+    const input = {
+      name: categoryForm.name.trim(),
+      emoji: categoryForm.emoji || "📦",
+      sortOrder: parseInt(categoryForm.sortOrder, 10) || 0,
+      active: categoryForm.active,
+    };
+    const action = editingCategory
+      ? updateCategory.mutateAsync({ id: editingCategory.id, input })
+      : createCategory.mutateAsync(input);
+    action
+      .then(() => {
+        setCategoryModalOpen(false);
+        showToast(`Categoria ${editingCategory ? "atualizada" : "criada"}!`, "success");
+      })
+      .catch(() => showToast("Não foi possível salvar a categoria.", "error"));
+  }
+
+  function handleDeleteCategory(category: ProductCategoryDTO) {
+    deleteCategory.mutate(category.id, {
+      onSuccess: () =>
+        showToast(
+          category.productsCount > 0
+            ? "Categoria em uso: foi desativada e sai da vitrine, mas os produtos continuam com ela."
+            : "Categoria excluída.",
+          "info",
+        ),
+      onError: () => showToast("Não foi possível excluir a categoria.", "error"),
+    });
+  }
+
   function handleDeactivate(id: string) {
     deactivateProduct.mutate(id, {
       onSuccess: () => showToast("Produto desativado.", "info"),
@@ -182,104 +263,178 @@ export function AdminProductsPage() {
     <div>
       <div className="admin-header">
         <h1>Produtos</h1>
-        <button className="btn-primary" onClick={openCreate}>
-          + Novo Produto
-        </button>
+        {tab === "products" ? (
+          <button className="btn-primary" onClick={openCreate}>
+            + Novo Produto
+          </button>
+        ) : (
+          <button className="btn-primary" onClick={() => openCategoryModal(null)}>
+            + Nova Categoria
+          </button>
+        )}
       </div>
-      <div className="admin-table-wrap">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Produto</th>
-              <th>Categoria</th>
-              <th>Material</th>
-              <th>Preço</th>
-              <th>Margem</th>
-              <th>Estoque</th>
-              <th>Status</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
+
+      <div className="tabs">
+        {TABS.map((item) => (
+          <button
+            key={item.key}
+            className={`tab-btn${tab === item.key ? " active" : ""}`}
+            onClick={() => setTab(item.key)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      {tab === "products" && (
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead>
               <tr>
-                <td colSpan={8} style={{ color: "var(--text-muted)" }}>
-                  Carregando...
-                </td>
+                <th>Produto</th>
+                <th>Categoria</th>
+                <th>Material</th>
+                <th>Preço</th>
+                <th>Margem</th>
+                <th>Estoque</th>
+                <th>Status</th>
+                <th>Ações</th>
               </tr>
-            ) : (
-              products.map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    {p.imageUrl ? (
-                      <img
-                        src={p.imageUrl}
-                        alt={p.name}
-                        style={{ width: "28px", height: "28px", objectFit: "cover", borderRadius: "6px", marginRight: ".5rem", verticalAlign: "middle" }}
-                      />
-                    ) : (
-                      <span style={{ fontSize: "1.5rem" }}>{p.emoji}</span>
-                    )}{" "}
-                    {p.name}
-                  </td>
-                  <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{categoryLabel(p.category)}</td>
-                  <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{p.material}</td>
-                  <td>
-                    <strong>R$ {p.price.toFixed(2)}</strong>
-                    {p.oldPrice && (
-                      <>
-                        <br />
-                        <small style={{ color: "var(--text-muted)", textDecoration: "line-through" }}>
-                          R$ {p.oldPrice.toFixed(2)}
-                        </small>
-                      </>
-                    )}
-                  </td>
-                  <td style={{ fontSize: ".82rem" }}>
-                    {p.costPrice ? (
-                      <>
-                        <div style={{ color: "var(--text-muted)" }}>Custo: R$ {p.costPrice.toFixed(2)}</div>
-                        <div style={{ color: p.price - p.costPrice >= 0 ? "var(--success)" : "var(--danger)" }}>
-                          {(((p.price - p.costPrice) / p.price) * 100).toFixed(0)}% margem
-                        </div>
-                      </>
-                    ) : (
-                      <span style={{ color: "var(--text-muted)" }}>—</span>
-                    )}
-                  </td>
-                  <td>
-                    <span style={{ color: p.stock > 0 ? "var(--success)" : "var(--danger)" }}>
-                      ● {p.stock > 0 ? `${p.stock} em estoque` : "Sem estoque"}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`status-badge ${p.active ? "status-active" : "status-inactive"}`}>
-                      {p.active ? "Ativo" : "Inativo"}
-                    </span>
-                  </td>
-                  <td>
-                    <button className="action-btn" onClick={() => openEdit(p)}>
-                      ✏️ Editar
-                    </button>
-                    <button className="action-btn" onClick={() => navigate(`/admin/precificacao?productId=${p.id}`)}>
-                      🧮 Calcular preço
-                    </button>
-                    {p.active ? (
-                      <button className="action-btn danger" onClick={() => handleDeactivate(p.id)}>
-                        🗑
-                      </button>
-                    ) : (
-                      <button className="action-btn" onClick={() => handleToggleActive(p.id, p.active)}>
-                        ▶ Ativar
-                      </button>
-                    )}
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={8} style={{ color: "var(--text-muted)" }}>
+                    Carregando...
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : (
+                products.map((p) => (
+                  <tr key={p.id}>
+                    <td>
+                      {p.imageUrl ? (
+                        <img
+                          src={p.imageUrl}
+                          alt={p.name}
+                          style={{ width: "28px", height: "28px", objectFit: "cover", borderRadius: "6px", marginRight: ".5rem", verticalAlign: "middle" }}
+                        />
+                      ) : (
+                        <span style={{ fontSize: "1.5rem" }}>{p.emoji}</span>
+                      )}{" "}
+                      {p.name}
+                    </td>
+                    <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{categoryLabel(p.category)}</td>
+                    <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{p.material}</td>
+                    <td>
+                      <strong>R$ {p.price.toFixed(2)}</strong>
+                      {p.oldPrice && (
+                        <>
+                          <br />
+                          <small style={{ color: "var(--text-muted)", textDecoration: "line-through" }}>
+                            R$ {p.oldPrice.toFixed(2)}
+                          </small>
+                        </>
+                      )}
+                    </td>
+                    <td style={{ fontSize: ".82rem" }}>
+                      {p.costPrice ? (
+                        <>
+                          <div style={{ color: "var(--text-muted)" }}>Custo: R$ {p.costPrice.toFixed(2)}</div>
+                          <div style={{ color: p.price - p.costPrice >= 0 ? "var(--success)" : "var(--danger)" }}>
+                            {(((p.price - p.costPrice) / p.price) * 100).toFixed(0)}% margem
+                          </div>
+                        </>
+                      ) : (
+                        <span style={{ color: "var(--text-muted)" }}>—</span>
+                      )}
+                    </td>
+                    <td>
+                      <span style={{ color: p.stock > 0 ? "var(--success)" : "var(--danger)" }}>
+                        ● {p.stock > 0 ? `${p.stock} em estoque` : "Sem estoque"}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`status-badge ${p.active ? "status-active" : "status-inactive"}`}>
+                        {p.active ? "Ativo" : "Inativo"}
+                      </span>
+                    </td>
+                    <td>
+                      <button className="action-btn" onClick={() => openEdit(p)}>
+                        ✏️ Editar
+                      </button>
+                      <button className="action-btn" onClick={() => navigate(`/admin/precificacao?productId=${p.id}`)}>
+                        🧮 Calcular preço
+                      </button>
+                      {p.active ? (
+                        <button className="action-btn danger" onClick={() => handleDeactivate(p.id)}>
+                          🗑
+                        </button>
+                      ) : (
+                        <button className="action-btn" onClick={() => handleToggleActive(p.id, p.active)}>
+                          ▶ Ativar
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {tab === "categories" && (
+        <div className="admin-table-wrap" style={{ marginTop: "1rem" }}>
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Categoria</th>
+                <th>Slug</th>
+                <th>Ordem</th>
+                <th>Produtos</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {categories.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ color: "var(--text-muted)" }}>
+                    Nenhuma categoria cadastrada.
+                  </td>
+                </tr>
+              ) : (
+                categories.map((category) => (
+                  <tr key={category.id} style={{ opacity: category.active ? 1 : 0.5 }}>
+                    <td>
+                      {category.emoji} {category.name}
+                    </td>
+                    <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{category.slug}</td>
+                    <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{category.sortOrder}</td>
+                    <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{category.productsCount}</td>
+                    <td>
+                      <span className={`status-badge ${category.active ? "status-active" : "status-inactive"}`}>
+                        {category.active ? "Ativa" : "Inativa"}
+                      </span>
+                    </td>
+                    <td>
+                      <button className="action-btn" onClick={() => openCategoryModal(category)}>
+                        ✏️ Editar
+                      </button>
+                      <button className="action-btn danger" onClick={() => handleDeleteCategory(category)}>
+                        {category.productsCount > 0 ? "🚫 Desativar" : "🗑"}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+          <p style={{ color: "var(--text-muted)", fontSize: ".78rem", padding: "0 1rem 1rem" }}>
+            O slug é gerado do nome na criação e não muda depois — é ele que os produtos guardam.
+            Renomear a categoria troca só o rótulo mostrado na loja.
+          </p>
+        </div>
+      )}
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={`${editing ? "Editar" : "Novo"} Produto`}>
         <div className="form-grid" style={{ gap: ".8rem" }}>
@@ -297,13 +452,18 @@ export function AdminProductsPage() {
             <select
               className="admin-select"
               value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value as ProductCategoryKey })}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
             >
-              {PRODUCT_CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {categoryLabel(c)}
+              <option value="">Selecione...</option>
+              {activeCategories.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.emoji} {c.name}
                 </option>
               ))}
+              {/* Produto de categoria desativada continua editável sem trocar de categoria. */}
+              {form.category && !activeCategories.some((c) => c.slug === form.category) && (
+                <option value={form.category}>{categoryLabel(form.category)} (inativa)</option>
+              )}
             </select>
           </div>
           <div className="form-group">
@@ -540,6 +700,61 @@ export function AdminProductsPage() {
           disabled={uploadImage.isPending || uploadVideo.isPending}
         >
           💾 Salvar Produto
+        </button>
+      </Modal>
+
+      <Modal
+        open={categoryModalOpen}
+        onClose={() => setCategoryModalOpen(false)}
+        title={`${editingCategory ? "Editar" : "Nova"} Categoria`}
+      >
+        <div className="form-grid" style={{ gap: ".8rem" }}>
+          <div className="form-group">
+            <label>Nome</label>
+            <input
+              className="admin-input"
+              value={categoryForm.name}
+              onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+              placeholder="Ex.: Peças automotivas"
+            />
+          </div>
+          <div className="form-group">
+            <label>Emoji</label>
+            <input
+              className="admin-input"
+              value={categoryForm.emoji}
+              onChange={(e) => setCategoryForm({ ...categoryForm, emoji: e.target.value })}
+            />
+          </div>
+          <div className="form-group">
+            <label>Ordem na vitrine</label>
+            <input
+              className="admin-input"
+              type="number"
+              min={0}
+              value={categoryForm.sortOrder}
+              onChange={(e) => setCategoryForm({ ...categoryForm, sortOrder: e.target.value })}
+            />
+          </div>
+          <div className="form-group">
+            <label>Status</label>
+            <select
+              className="admin-select"
+              value={categoryForm.active ? "active" : "inactive"}
+              onChange={(e) => setCategoryForm({ ...categoryForm, active: e.target.value === "active" })}
+            >
+              <option value="active">Ativa</option>
+              <option value="inactive">Inativa (some da loja)</option>
+            </select>
+          </div>
+        </div>
+        {editingCategory && (
+          <p style={{ color: "var(--text-muted)", fontSize: ".78rem", marginTop: ".6rem" }}>
+            Slug: <strong>{editingCategory.slug}</strong> · {editingCategory.productsCount} produto(s)
+          </p>
+        )}
+        <button className="btn-primary" style={{ width: "100%", marginTop: "1rem" }} onClick={handleSaveCategory}>
+          💾 Salvar Categoria
         </button>
       </Modal>
     </div>

@@ -5,6 +5,7 @@ import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 import { authRouter } from "./modules/auth/auth.routes";
 import { addressesRouter } from "./modules/addresses/addresses.routes";
 import { productsRouter } from "./modules/products/products.routes";
+import { productCategoriesRouter } from "./modules/product-categories/product-categories.routes";
 import { cartRouter } from "./modules/cart/cart.routes";
 import { couponsRouter } from "./modules/coupons/coupons.routes";
 import { shippingRouter } from "./modules/shipping/shipping.routes";
@@ -57,6 +58,7 @@ export function createApp() {
   app.use("/auth", authRouter);
   app.use("/addresses", addressesRouter);
   app.use("/products", productsRouter);
+  app.use("/product-categories", productCategoriesRouter);
   app.use("/cart", cartRouter);
   app.use("/coupons", couponsRouter);
   app.use("/shipping", shippingRouter);
