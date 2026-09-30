@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: "/admin/produtos", icon: "🖨️", label: "Produtos" },
   { to: "/admin/cupons", icon: "🎟️", label: "Cupons" },
   { to: "/admin/clientes", icon: "👥", label: "Clientes" },
+  { to: "/admin/consignados", icon: "🏪", label: "Consignados" },
   { to: "/admin/orcamentos", icon: "🧩", label: "Orçamentos" },
   { to: "/admin/estoque", icon: "🧵", label: "Estoque" },
   { to: "/admin/fornecedores", icon: "🏢", label: "Fornecedores" },

@@ -15,6 +15,7 @@ export function toUserDTO(user: User): UserDTO {
     cpf: user.cpf ?? null,
     phone: user.phone ?? null,
     role: user.role,
+    consignmentStoreId: user.consignmentStoreId ?? null,
     createdAt: user.createdAt.toISOString(),
   };
 }

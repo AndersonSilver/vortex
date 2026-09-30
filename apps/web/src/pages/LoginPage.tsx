@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useLogin } from "../hooks/useAuth";
+import { homePathFor } from "../state/auth-store";
 import { useToast } from "../components/Toast";
 import { API_URL, extractErrorMessage } from "../lib/api-client";
 
@@ -28,7 +29,7 @@ export function LoginPage() {
     login.mutate(
       { email, password },
       {
-        onSuccess: () => navigate("/"),
+        onSuccess: (data) => navigate(homePathFor(data.user)),
         onError: (error) => showToast(extractErrorMessage(error, "E-mail ou senha inválidos."), "error"),
       },
     );

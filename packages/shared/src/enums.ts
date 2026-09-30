@@ -1,4 +1,6 @@
-export const USER_ROLES = ["customer", "admin"] as const;
+// "consignado" = usuário de uma loja física parceira que vende peças da Vortex em consignação.
+// Fica ligado a uma ConsignmentStore e só enxerga o painel /consignado dela.
+export const USER_ROLES = ["customer", "admin", "consignado"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 export const PRODUCT_BADGES = ["new", "hot", "sale"] as const;
@@ -211,4 +213,44 @@ export const EXPENSE_SOURCE_LABELS: Record<ExpenseSource, string> = {
   recurring: "Despesa fixa",
   depreciation: "Depreciação",
   manual: "Lançamento manual",
+};
+
+// --- Consignação ---------------------------------------------------------------
+
+/**
+ * Movimento do estoque de uma loja consignada:
+ * - shipment: peças enviadas pela Vortex para a loja (entrada);
+ * - sale: peças que a loja vendeu no balcão (saída, gera débito a repassar);
+ * - return: peças devolvidas para a Vortex (saída);
+ * - adjustment: correção de contagem feita pelo admin (entrada ou saída).
+ */
+export const CONSIGNMENT_MOVEMENT_TYPES = ["shipment", "sale", "return", "adjustment"] as const;
+export type ConsignmentMovementType = (typeof CONSIGNMENT_MOVEMENT_TYPES)[number];
+
+export const CONSIGNMENT_MOVEMENT_TYPE_LABELS: Record<ConsignmentMovementType, string> = {
+  shipment: "Envio",
+  sale: "Venda",
+  return: "Devolução",
+  adjustment: "Ajuste",
+};
+
+export const CONSIGNMENT_REQUEST_STATUSES = ["pending", "approved", "shipped", "rejected", "cancelled"] as const;
+export type ConsignmentRequestStatus = (typeof CONSIGNMENT_REQUEST_STATUSES)[number];
+
+export const CONSIGNMENT_REQUEST_STATUS_LABELS: Record<ConsignmentRequestStatus, string> = {
+  pending: "Aguardando aprovação",
+  approved: "Aprovado",
+  shipped: "Enviado",
+  rejected: "Recusado",
+  cancelled: "Cancelado",
+};
+
+export const CONSIGNMENT_PAYMENT_METHODS = ["pix", "cash", "transfer", "other"] as const;
+export type ConsignmentPaymentMethod = (typeof CONSIGNMENT_PAYMENT_METHODS)[number];
+
+export const CONSIGNMENT_PAYMENT_METHOD_LABELS: Record<ConsignmentPaymentMethod, string> = {
+  pix: "Pix",
+  cash: "Dinheiro",
+  transfer: "Transferência",
+  other: "Outro",
 };

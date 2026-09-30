@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { UserDTO } from "@vortex/shared";
 import { api } from "../lib/api-client";
-import { useAuthStore } from "../state/auth-store";
+import { homePathFor, useAuthStore } from "../state/auth-store";
 import { useToast } from "../components/Toast";
 
 export function GoogleCallbackPage() {
@@ -31,7 +31,7 @@ export function GoogleCallbackPage() {
       .get<UserDTO>("/auth/me", { headers: { Authorization: `Bearer ${accessToken}` } })
       .then(({ data }) => {
         setUser(data);
-        navigate("/", { replace: true });
+        navigate(homePathFor(data), { replace: true });
       })
       .catch(() => {
         showToast("Não foi possível concluir o login com Google.", "error");

@@ -30,3 +30,12 @@ export const useAuthStore = create<AuthState>()(
 export function useIsAdmin(): boolean {
   return useAuthStore((state) => state.user?.role === "admin");
 }
+
+export function useIsConsignado(): boolean {
+  return useAuthStore((state) => state.user?.role === "consignado");
+}
+
+/** Para onde mandar o usuário logo depois do login: o consignado cai direto no painel da loja. */
+export function homePathFor(user: UserDTO | null | undefined): string {
+  return user?.role === "consignado" ? "/consignado" : "/";
+}

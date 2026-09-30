@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   ASSET_STATUSES,
+  CONSIGNMENT_PAYMENT_METHODS,
   COUPON_TYPES,
   DISCOUNT_TYPES,
   EXPENSE_CATEGORY_KINDS,
@@ -439,3 +440,109 @@ export const postMonthSchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Use o formato AAAA-MM."),
 });
 export type PostMonthInput = z.infer<typeof postMonthSchema>;
+
+// --- Consignação ---------------------------------------------------------------
+
+export const consignmentStoreSchema = z.object({
+  name: z.string().trim().min(2).max(160),
+  document: z.string().trim().max(20).nullable().optional(),
+  contactName: z.string().trim().max(120).nullable().optional(),
+  phone: z.string().trim().max(20).nullable().optional(),
+  email: z.string().trim().email().nullable().optional().or(z.literal("").transform(() => null)),
+  address: z.string().trim().max(500).nullable().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+  active: z.boolean().default(true),
+});
+export type ConsignmentStoreInput = z.infer<typeof consignmentStoreSchema>;
+
+export const consignmentLinkUserSchema = z.object({
+  email: z.string().trim().email(),
+});
+export type ConsignmentLinkUserInput = z.infer<typeof consignmentLinkUserSchema>;
+
+const consignmentQtyItem = z.object({
+  productId: z.string().uuid(),
+  qty: z.number().int().positive("A quantidade precisa ser maior que zero."),
+});
+
+function uniqueProducts<T extends { productId: string }>(items: T[]) {
+  return new Set(items.map((item) => item.productId)).size === items.length;
+}
+
+/** Venda registrada pela própria loja consignada. */
+export const consignmentSaleSchema = z.object({
+  items: z
+    .array(consignmentQtyItem)
+    .min(1, "Informe ao menos um produto.")
+    .refine(uniqueProducts, "O mesmo produto apareceu mais de uma vez."),
+  note: z.string().max(500).nullable().optional(),
+});
+export type ConsignmentSaleInput = z.infer<typeof consignmentSaleSchema>;
+
+/** Envio de peças da Vortex para a loja. O repasse é obrigatório para produto novo na loja. */
+export const consignmentShipmentSchema = z.object({
+  items: z
+    .array(consignmentQtyItem.extend({ transferPrice: z.number().positive().nullable().optional() }))
+    .min(1, "Informe ao menos um produto.")
+    .refine(uniqueProducts, "O mesmo produto apareceu mais de uma vez."),
+  note: z.string().max(500).nullable().optional(),
+});
+export type ConsignmentShipmentInput = z.infer<typeof consignmentShipmentSchema>;
+
+/** Devolução de peças da loja para a Vortex. */
+export const consignmentReturnSchema = consignmentSaleSchema;
+export type ConsignmentReturnInput = z.infer<typeof consignmentReturnSchema>;
+
+/** Correção de contagem: positiva ou negativa. */
+export const consignmentAdjustmentSchema = z.object({
+  productId: z.string().uuid(),
+  changeQuantity: z
+    .number()
+    .int()
+    .refine((value) => value !== 0, "A quantidade não pode ser zero."),
+  note: z.string().trim().min(1, "Explique o motivo do ajuste.").max(500),
+});
+export type ConsignmentAdjustmentInput = z.infer<typeof consignmentAdjustmentSchema>;
+
+export const consignmentTransferPriceSchema = z.object({
+  transferPrice: z.number().positive(),
+});
+export type ConsignmentTransferPriceInput = z.infer<typeof consignmentTransferPriceSchema>;
+
+export const consignmentPaymentSchema = z.object({
+  amount: z.number().positive(),
+  paidAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida."),
+  method: z.enum(CONSIGNMENT_PAYMENT_METHODS).default("pix"),
+  note: z.string().max(500).nullable().optional(),
+});
+export type ConsignmentPaymentInput = z.infer<typeof consignmentPaymentSchema>;
+
+/** Pedido de reposição aberto pela loja. */
+export const consignmentRequestSchema = z.object({
+  items: z
+    .array(consignmentQtyItem)
+    .min(1, "Informe ao menos um produto.")
+    .refine(uniqueProducts, "O mesmo produto apareceu mais de uma vez."),
+  note: z.string().max(1000).nullable().optional(),
+});
+export type ConsignmentRequestInput = z.infer<typeof consignmentRequestSchema>;
+
+/** Aprovação do admin: quanto vai de cada item e a que repasse. qtySent 0 = item cortado. */
+export const consignmentRequestApproveSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        itemId: z.string().uuid(),
+        qtySent: z.number().int().min(0),
+        transferPrice: z.number().positive().nullable().optional(),
+      }),
+    )
+    .min(1),
+  adminNote: z.string().max(1000).nullable().optional(),
+});
+export type ConsignmentRequestApproveInput = z.infer<typeof consignmentRequestApproveSchema>;
+
+export const consignmentRequestRejectSchema = z.object({
+  adminNote: z.string().trim().min(1, "Explique o motivo da recusa.").max(1000),
+});
+export type ConsignmentRequestRejectInput = z.infer<typeof consignmentRequestRejectSchema>;

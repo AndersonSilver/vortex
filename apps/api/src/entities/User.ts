@@ -2,6 +2,8 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -10,6 +12,7 @@ import type { UserRole } from "@vortex/shared";
 import { Address } from "./Address";
 import { Order } from "./Order";
 import { CartItem } from "./CartItem";
+import { ConsignmentStore } from "./ConsignmentStore";
 
 @Entity({ name: "users" })
 export class User {
@@ -36,6 +39,14 @@ export class User {
 
   @Column({ type: "varchar", default: "customer" })
   role!: UserRole;
+
+  /** Loja consignada do usuário; preenchido só quando role = "consignado". */
+  @ManyToOne(() => ConsignmentStore, { onDelete: "SET NULL", nullable: true })
+  @JoinColumn({ name: "consignment_store_id" })
+  consignmentStore?: ConsignmentStore | null;
+
+  @Column({ name: "consignment_store_id", type: "uuid", nullable: true })
+  consignmentStoreId?: string | null;
 
   @OneToMany(() => Address, (address) => address.user)
   addresses!: Address[];

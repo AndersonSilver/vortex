@@ -16,6 +16,8 @@ import { blingRouter } from "./modules/bling/bling.routes";
 import { quotesRouter } from "./modules/quotes/quotes.routes";
 import { mediaRouter } from "./modules/media/media.routes";
 import { adminRouter } from "./modules/admin/admin.routes";
+import { consignmentAdminRouter } from "./modules/consignment/consignment-admin.routes";
+import { consignmentRouter } from "./modules/consignment/consignment.routes";
 import { settingsRouter } from "./modules/settings/settings.routes";
 import { filamentsRouter } from "./modules/filaments/filaments.routes";
 import { printersRouter } from "./modules/printers/printers.routes";
@@ -68,7 +70,10 @@ export function createApp() {
   app.use("/bling", blingRouter);
   app.use("/quotes", quotesRouter);
   app.use("/media", mediaRouter);
+  // Antes de "/admin" para não passar pelo router genérico do admin primeiro.
+  app.use("/admin/consignment", consignmentAdminRouter);
   app.use("/admin", adminRouter);
+  app.use("/consignment", consignmentRouter);
   app.use("/settings", settingsRouter);
   app.use("/filaments", filamentsRouter);
   app.use("/printers", printersRouter);

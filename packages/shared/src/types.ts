@@ -1,5 +1,8 @@
 import type {
   AssetStatus,
+  ConsignmentMovementType,
+  ConsignmentPaymentMethod,
+  ConsignmentRequestStatus,
   CouponType,
   CustomQuoteStatus,
   DiscountType,
@@ -90,6 +93,8 @@ export interface UserDTO {
   cpf: string | null;
   phone: string | null;
   role: UserRole;
+  /** Loja consignada a que o usuário pertence; só existe quando role = "consignado". */
+  consignmentStoreId: string | null;
   createdAt: string;
 }
 
@@ -529,4 +534,144 @@ export interface CostRatesDTO {
   /** Quantos meses de gasto real sustentam esses números. */
   assetsCount: number;
   recurringCount: number;
+}
+
+// --- Consignação ---------------------------------------------------------------
+
+export interface ConsignmentStoreDTO {
+  id: string;
+  name: string;
+  document: string | null;
+  contactName: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  notes: string | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Linha da lista de lojas no admin, com os números de cada uma. */
+export interface ConsignmentStoreSummaryDTO extends ConsignmentStoreDTO {
+  piecesOnHand: number;
+  stockValue: number;
+  balanceDue: number;
+  pendingRequests: number;
+  usersCount: number;
+}
+
+export interface ConsignmentUserDTO {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface ConsignmentStockDTO {
+  id: string;
+  productId: string;
+  productName: string;
+  productSku: string | null;
+  productImageUrl: string | null;
+  productEmoji: string;
+  productCategory: string;
+  quantity: number;
+  transferPrice: number;
+  /** quantity × transferPrice */
+  stockValue: number;
+  updatedAt: string;
+}
+
+export interface ConsignmentMovementDTO {
+  id: string;
+  productId: string;
+  productName: string;
+  type: ConsignmentMovementType;
+  changeQuantity: number;
+  transferPrice: number;
+  /** Débito gerado (só em vendas). */
+  amount: number;
+  note: string | null;
+  createdByName: string | null;
+  requestId: string | null;
+  createdAt: string;
+}
+
+export interface ConsignmentPaymentDTO {
+  id: string;
+  amount: number;
+  paidAt: string;
+  method: ConsignmentPaymentMethod;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface ConsignmentMonthDTO {
+  /** YYYY-MM */
+  month: string;
+  piecesSold: number;
+  salesAmount: number;
+  paidAmount: number;
+}
+
+export interface ConsignmentFinancialDTO {
+  totalSales: number;
+  totalPaid: number;
+  /** totalSales − totalPaid: o que a loja ainda deve repassar. */
+  balanceDue: number;
+  months: ConsignmentMonthDTO[];
+  payments: ConsignmentPaymentDTO[];
+  /** Chave Pix da Vortex para o repasse (StoreSettings.pixKey). */
+  pixKey: string | null;
+}
+
+export interface ConsignmentSummaryDTO {
+  store: ConsignmentStoreDTO;
+  piecesOnHand: number;
+  productsCount: number;
+  stockValue: number;
+  monthPiecesSold: number;
+  monthSalesAmount: number;
+  balanceDue: number;
+  openRequests: number;
+}
+
+export interface ConsignmentRequestItemDTO {
+  id: string;
+  productId: string;
+  productName: string;
+  productImageUrl: string | null;
+  productEmoji: string;
+  qtyRequested: number;
+  qtySent: number | null;
+  transferPrice: number | null;
+  /** Repasse atual do produto nessa loja, se ela já trabalha com ele. */
+  currentTransferPrice: number | null;
+}
+
+export interface ConsignmentRequestDTO {
+  id: string;
+  storeId: string;
+  storeName: string;
+  status: ConsignmentRequestStatus;
+  note: string | null;
+  adminNote: string | null;
+  requestedByName: string | null;
+  items: ConsignmentRequestItemDTO[];
+  createdAt: string;
+  updatedAt: string;
+  shippedAt: string | null;
+}
+
+/** Produto do site disponível para pedir reposição. Não expõe preço de venda nem custo. */
+export interface ConsignmentCatalogItemDTO {
+  productId: string;
+  name: string;
+  sku: string | null;
+  category: string;
+  imageUrl: string | null;
+  emoji: string;
+  /** Repasse atual, quando a loja já trabalha com o produto. */
+  transferPrice: number | null;
+  quantityOnHand: number;
 }

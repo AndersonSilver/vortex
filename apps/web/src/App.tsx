@@ -10,7 +10,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { GoogleCallbackPage } from "./pages/GoogleCallbackPage";
 import { AccountPage } from "./pages/AccountPage";
-import { RequireAdmin, RequireAuth } from "./components/ProtectedRoute";
+import { RequireAdmin, RequireRole, RequireAuth } from "./components/ProtectedRoute";
 import { AdminLayout } from "./pages/admin/AdminLayout";
 import { AdminDashboardPage } from "./pages/admin/AdminDashboardPage";
 import { AdminOrdersPage } from "./pages/admin/AdminOrdersPage";
@@ -28,6 +28,15 @@ import { AdminPurchaseOrdersPage } from "./pages/admin/AdminPurchaseOrdersPage";
 import { AdminSuppliesPage } from "./pages/admin/AdminSuppliesPage";
 import { AdminAssetsPage } from "./pages/admin/AdminAssetsPage";
 import { AdminExpensesPage } from "./pages/admin/AdminExpensesPage";
+import { AdminConsignmentStoresPage } from "./pages/admin/AdminConsignmentStoresPage";
+import { AdminConsignmentStorePage } from "./pages/admin/AdminConsignmentStorePage";
+import { AdminConsignmentRequestsPage } from "./pages/admin/AdminConsignmentRequestsPage";
+import { ConsignadoLayout } from "./pages/consignado/ConsignadoLayout";
+import { ConsignadoDashboardPage } from "./pages/consignado/ConsignadoDashboardPage";
+import { ConsignadoProductsPage } from "./pages/consignado/ConsignadoProductsPage";
+import { ConsignadoRequestsPage } from "./pages/consignado/ConsignadoRequestsPage";
+import { ConsignadoFinancialPage } from "./pages/consignado/ConsignadoFinancialPage";
+import { ConsignadoHistoryPage } from "./pages/consignado/ConsignadoHistoryPage";
 
 function StorefrontLayout() {
   return (
@@ -107,6 +116,24 @@ export function App() {
           <Route path="precificacao" element={<AdminPricingCalculatorPage />} />
           <Route path="financeiro" element={<AdminFinancialReportsPage />} />
           <Route path="configuracoes" element={<AdminSettingsPage />} />
+          <Route path="consignados" element={<AdminConsignmentStoresPage />} />
+          <Route path="consignados/reposicoes" element={<AdminConsignmentRequestsPage />} />
+          <Route path="consignados/:id" element={<AdminConsignmentStorePage />} />
+        </Route>
+
+        <Route
+          path="/consignado"
+          element={
+            <RequireRole roles={["consignado"]}>
+              <ConsignadoLayout />
+            </RequireRole>
+          }
+        >
+          <Route index element={<ConsignadoDashboardPage />} />
+          <Route path="produtos" element={<ConsignadoProductsPage />} />
+          <Route path="reposicao" element={<ConsignadoRequestsPage />} />
+          <Route path="financeiro" element={<ConsignadoFinancialPage />} />
+          <Route path="historico" element={<ConsignadoHistoryPage />} />
         </Route>
       </Routes>
     </>

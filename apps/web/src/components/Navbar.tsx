@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useAuthStore, useIsAdmin } from "../state/auth-store";
+import { useAuthStore, useIsAdmin, useIsConsignado } from "../state/auth-store";
 import { useCartCount } from "../hooks/useCart";
 
 export function Navbar() {
@@ -7,6 +7,7 @@ export function Navbar() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const isAdmin = useIsAdmin();
+  const isConsignado = useIsConsignado();
   const cartCount = useCartCount();
 
   return (
@@ -51,6 +52,11 @@ export function Navbar() {
         {isAdmin && (
           <button className="btn-admin" onClick={() => navigate("/admin")}>
             ⚡ <span className="nav-text">Admin</span>
+          </button>
+        )}
+        {isConsignado && (
+          <button className="btn-admin" onClick={() => navigate("/consignado")}>
+            🏪 <span className="nav-text">Minha loja</span>
           </button>
         )}
       </div>
