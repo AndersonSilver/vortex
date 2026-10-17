@@ -4,6 +4,7 @@ import { useAddToCart } from "../hooks/useCart";
 import { useCategoryLabel } from "../hooks/useProductCategories";
 import { useToast } from "./Toast";
 import { useAuthStore } from "../state/auth-store";
+import { brl } from "../lib/format";
 
 const BADGE_LABEL: Record<string, string> = { hot: "🔥 Hot", new: "Novo", sale: "Sale" };
 
@@ -58,8 +59,8 @@ export function ProductCard({ product }: { product: ProductDTO }) {
         <div className="product-desc">{product.description.slice(0, 80)}...</div>
         <div className="product-footer">
           <div>
-            <span className="product-price">R$ {product.price.toFixed(2)}</span>
-            {product.oldPrice && <span className="product-price-old">R$ {product.oldPrice.toFixed(2)}</span>}
+            <span className="product-price">{brl(product.price)}</span>
+            {product.oldPrice && <span className="product-price-old">{brl(product.oldPrice)}</span>}
           </div>
           <button className="btn-cart" onClick={handleAddToCart} disabled={addToCart.isPending}>
             + Carrinho

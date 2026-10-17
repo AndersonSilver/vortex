@@ -40,6 +40,7 @@ import {
 import { useSuppliers } from "../../hooks/useSuppliers";
 import { Modal } from "../../components/Modal";
 import { useToast } from "../../components/Toast";
+import { brl } from "../../lib/format";
 
 type Tab = "entries" | "recurring" | "categories" | "rates";
 
@@ -50,9 +51,6 @@ const TABS: Array<{ key: Tab; label: string }> = [
   { key: "rates", label: "Taxas de custo" },
 ];
 
-function money(value: number): string {
-  return `R$ ${value.toFixed(2)}`;
-}
 
 function firstDayMonthsAgo(months: number): string {
   const date = new Date();
@@ -296,17 +294,17 @@ export function AdminExpensesPage() {
         <>
           <div
             className="admin-form"
-            style={{ display: "flex", gap: "1rem", alignItems: "flex-end", margin: "1rem 0" }}
+            style={{ display: "flex", flexWrap: "wrap", gap: "1rem", alignItems: "flex-end", margin: "1rem 0" }}
           >
-            <div className="form-group" style={{ margin: 0 }}>
+            <div className="form-group" style={{ margin: 0, flex: "1 1 140px" }}>
               <label>De</label>
               <input className="admin-input" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
             </div>
-            <div className="form-group" style={{ margin: 0 }}>
+            <div className="form-group" style={{ margin: 0, flex: "1 1 140px" }}>
               <label>Até</label>
               <input className="admin-input" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
             </div>
-            <div className="form-group" style={{ margin: 0 }}>
+            <div className="form-group" style={{ margin: 0, flex: "1 1 140px" }}>
               <label>Fechar mês</label>
               <input className="admin-input" type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
             </div>
@@ -319,14 +317,14 @@ export function AdminExpensesPage() {
             <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1rem" }}>
               <div className="admin-form" style={{ padding: ".8rem 1rem" }}>
                 <div style={{ fontSize: ".78rem", color: "var(--text-muted)" }}>Total no período</div>
-                <strong>{money(summary.total)}</strong>
+                <strong>{brl(summary.total)}</strong>
               </div>
               {EXPENSE_CATEGORY_KINDS.map((kind) => (
                 <div key={kind} className="admin-form" style={{ padding: ".8rem 1rem" }}>
                   <div style={{ fontSize: ".78rem", color: "var(--text-muted)" }}>
                     {EXPENSE_CATEGORY_KIND_LABELS[kind]}
                   </div>
-                  <strong>{money(summary.byKind[kind] ?? 0)}</strong>
+                  <strong>{brl(summary.byKind[kind] ?? 0)}</strong>
                 </div>
               ))}
             </div>
@@ -350,7 +348,7 @@ export function AdminExpensesPage() {
                       <td style={{ fontSize: ".82rem", color: "var(--text-muted)" }}>
                         {EXPENSE_CATEGORY_KIND_LABELS[row.kind]}
                       </td>
-                      <td>{money(row.total)}</td>
+                      <td>{brl(row.total)}</td>
                       <td>{row.sharePercent.toFixed(1)}%</td>
                     </tr>
                   ))}
@@ -396,7 +394,7 @@ export function AdminExpensesPage() {
                         {EXPENSE_SOURCE_LABELS[entry.source]}
                       </td>
                       <td>
-                        <strong>{money(entry.amount)}</strong>
+                        <strong>{brl(entry.amount)}</strong>
                       </td>
                       <td>
                         {entry.source === "manual" && (
@@ -424,7 +422,7 @@ export function AdminExpensesPage() {
       {tab === "recurring" && (
         <>
           <p style={{ color: "var(--text-muted)", fontSize: ".85rem", margin: "1rem 0" }}>
-            Custo fixo mensal somado: <strong>{money(monthlyFixedTotal)}</strong>. Use "Lançar fixas e depreciação"
+            Custo fixo mensal somado: <strong>{brl(monthlyFixedTotal)}</strong>. Use "Lançar fixas e depreciação"
             na aba Lançamentos para gerar o mês.
           </p>
           <div className="admin-table-wrap">
@@ -451,9 +449,9 @@ export function AdminExpensesPage() {
                     <tr key={expense.id} style={{ opacity: expense.active ? 1 : 0.5 }}>
                       <td>{expense.name}</td>
                       <td style={{ fontSize: ".82rem", color: "var(--text-muted)" }}>{expense.categoryName}</td>
-                      <td>{money(expense.amount)}</td>
+                      <td>{brl(expense.amount)}</td>
                       <td style={{ fontSize: ".82rem" }}>{RECURRENCE_PERIOD_LABELS[expense.period]}</td>
-                      <td>{money(expense.monthlyAmount)}</td>
+                      <td>{brl(expense.monthlyAmount)}</td>
                       <td>
                         <button className="action-btn" onClick={() => openRecurringModal(expense)}>
                           ✏️
@@ -534,11 +532,11 @@ export function AdminExpensesPage() {
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".6rem", marginTop: ".8rem" }}>
             <div>Depreciação mensal</div>
-            <strong>{money(rates.monthlyDepreciation)}</strong>
+            <strong>{brl(rates.monthlyDepreciation)}</strong>
             <div>Custo fixo mensal</div>
-            <strong>{money(rates.monthlyFixedExpenses)}</strong>
+            <strong>{brl(rates.monthlyFixedExpenses)}</strong>
             <div>Manutenção média/mês</div>
-            <strong>{money(rates.monthlyMaintenance)}</strong>
+            <strong>{brl(rates.monthlyMaintenance)}</strong>
             <div>Horas de impressora/mês</div>
             <strong>{rates.printerHoursPerMonth}h</strong>
             <div>Horas produtivas/mês</div>
@@ -550,11 +548,11 @@ export function AdminExpensesPage() {
             <strong style={{ fontSize: ".82rem", color: "var(--text-muted)" }}>Configurado</strong>
             <strong style={{ fontSize: ".82rem", color: "var(--text-muted)" }}>Sugerido</strong>
             <div>Custo de máquina/hora</div>
-            <span>{money(rates.configuredMachineCostPerHour)}</span>
-            <strong>{money(rates.suggestedMachineCostPerHour)}</strong>
+            <span>{brl(rates.configuredMachineCostPerHour)}</span>
+            <strong>{brl(rates.suggestedMachineCostPerHour)}</strong>
             <div>Custo fixo/hora (overhead)</div>
-            <span>{money(rates.configuredOverheadCostPerHour)}</span>
-            <strong>{money(rates.suggestedOverheadCostPerHour)}</strong>
+            <span>{brl(rates.configuredOverheadCostPerHour)}</span>
+            <strong>{brl(rates.suggestedOverheadCostPerHour)}</strong>
           </div>
           <button
             className="btn-primary"

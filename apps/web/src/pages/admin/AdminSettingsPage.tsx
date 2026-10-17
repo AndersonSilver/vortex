@@ -34,7 +34,7 @@ export function AdminSettingsPage() {
       <div className="admin-header">
         <h1>Configurações</h1>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.2rem" }}>
+      <div className="panel-grid">
         <div className="admin-form">
           <h3>🏢 Dados da Loja</h3>
           <div className="form-group">

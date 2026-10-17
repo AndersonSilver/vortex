@@ -1,5 +1,6 @@
 import { useAdminQuotes, useUpdateQuote } from "../../hooks/useQuotes";
 import { useToast } from "../../components/Toast";
+import { brl } from "../../lib/format";
 
 const STATUS_LABELS: Record<string, string> = { pending: "Aguardando", quoted: "Orçado", rejected: "Recusado" };
 
@@ -63,7 +64,7 @@ export function AdminQuotesPage() {
                   <td>{q.color}</td>
                   <td>{q.qty}</td>
                   <td style={{ color: "var(--text-muted)" }}>{q.email}</td>
-                  <td>{q.quotedPrice ? `R$ ${q.quotedPrice.toFixed(2)}` : "—"}</td>
+                  <td>{q.quotedPrice ? brl(q.quotedPrice) : "—"}</td>
                   <td>
                     <span className={`status-badge ${q.status === "quoted" ? "status-active" : q.status === "rejected" ? "status-cancelled" : "status-pending"}`}>
                       {STATUS_LABELS[q.status]}

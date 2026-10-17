@@ -18,6 +18,8 @@ import { useFilaments } from "../../hooks/useFilaments";
 import { useUploadProductImage, useUploadProductVideo } from "../../hooks/useMedia";
 import { Modal } from "../../components/Modal";
 import { useToast } from "../../components/Toast";
+import { ProductThumb } from "../../components/consignment";
+import { brl } from "../../lib/format";
 
 const MATERIAL_OPTIONS = ["PLA", "PETG", "ABS", "Resina", "Nylon", "TPU", "Conforme projeto"];
 const MAX_PRODUCT_IMAGES = 5;
@@ -35,6 +37,9 @@ interface CategoryFormState {
   sortOrder: string;
   active: boolean;
 }
+
+const SLUG_HINT =
+  "O slug é gerado do nome na criação e não muda depois — é ele que os produtos guardam. Renomear a categoria troca só o rótulo mostrado na loja.";
 
 const EMPTY_CATEGORY_FORM: CategoryFormState = { name: "", emoji: "📦", sortOrder: "0", active: true };
 
@@ -259,6 +264,94 @@ export function AdminProductsPage() {
     });
   }
 
+  // Células e botões usados tanto na tabela (desktop) quanto nos cards (celular).
+  function priceCell(p: ProductDTO) {
+    return (
+      <>
+        <strong>{brl(p.price)}</strong>
+        {p.oldPrice && (
+          <small style={{ display: "block", color: "var(--text-muted)", textDecoration: "line-through" }}>
+            {brl(p.oldPrice)}
+          </small>
+        )}
+      </>
+    );
+  }
+
+  function marginCell(p: ProductDTO) {
+    if (!p.costPrice) return <span style={{ color: "var(--text-muted)" }}>—</span>;
+    return (
+      <>
+        <div style={{ color: p.price - p.costPrice >= 0 ? "var(--success)" : "var(--danger)" }}>
+          {(((p.price - p.costPrice) / p.price) * 100).toFixed(0)}% margem
+        </div>
+        <div style={{ color: "var(--text-muted)", fontSize: ".78rem" }}>Custo: {brl(p.costPrice)}</div>
+      </>
+    );
+  }
+
+  function stockCell(p: ProductDTO) {
+    return (
+      <span style={{ color: p.stock > 0 ? "var(--success)" : "var(--danger)", whiteSpace: "nowrap" }}>
+        ● {p.stock > 0 ? `${p.stock} em estoque` : "Sem estoque"}
+      </span>
+    );
+  }
+
+  function productStatus(p: ProductDTO) {
+    return (
+      <span className={`status-badge ${p.active ? "status-active" : "status-inactive"}`}>
+        {p.active ? "Ativo" : "Inativo"}
+      </span>
+    );
+  }
+
+  function productActions(p: ProductDTO) {
+    return (
+      <>
+        <button className="action-btn" onClick={() => openEdit(p)}>
+          ✏️ Editar
+        </button>
+        <button className="action-btn" onClick={() => navigate(`/admin/precificacao?productId=${p.id}`)}>
+          🧮 Calcular preço
+        </button>
+        {p.active ? (
+          <button className="action-btn danger icon-only" onClick={() => handleDeactivate(p.id)} title="Desativar">
+            🗑
+          </button>
+        ) : (
+          <button className="action-btn" onClick={() => handleToggleActive(p.id, p.active)}>
+            ▶ Ativar
+          </button>
+        )}
+      </>
+    );
+  }
+
+  function categoryStatus(category: ProductCategoryDTO) {
+    return (
+      <span className={`status-badge ${category.active ? "status-active" : "status-inactive"}`}>
+        {category.active ? "Ativa" : "Inativa"}
+      </span>
+    );
+  }
+
+  function categoryActions(category: ProductCategoryDTO) {
+    return (
+      <>
+        <button className="action-btn" onClick={() => openCategoryModal(category)}>
+          ✏️ Editar
+        </button>
+        <button
+          className={`action-btn danger${category.productsCount > 0 ? "" : " icon-only"}`}
+          onClick={() => handleDeleteCategory(category)}
+        >
+          {category.productsCount > 0 ? "🚫 Desativar" : "🗑"}
+        </button>
+      </>
+    );
+  }
+
   return (
     <div>
       <div className="admin-header">
@@ -286,154 +379,170 @@ export function AdminProductsPage() {
         ))}
       </div>
       {tab === "products" && (
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Produto</th>
-                <th>Categoria</th>
-                <th>Material</th>
-                <th>Preço</th>
-                <th>Margem</th>
-                <th>Estoque</th>
-                <th>Status</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
+        <>
+          <div className="admin-table-wrap desktop-table">
+            <table className="admin-table">
+              <thead>
                 <tr>
-                  <td colSpan={8} style={{ color: "var(--text-muted)" }}>
-                    Carregando...
-                  </td>
+                  <th>Produto</th>
+                  <th>Categoria</th>
+                  <th>Material</th>
+                  <th>Preço</th>
+                  <th>Margem</th>
+                  <th>Estoque</th>
+                  <th>Status</th>
+                  <th>Ações</th>
                 </tr>
-              ) : (
-                products.map((p) => (
-                  <tr key={p.id}>
-                    <td>
-                      {p.imageUrl ? (
-                        <img
-                          src={p.imageUrl}
-                          alt={p.name}
-                          style={{ width: "28px", height: "28px", objectFit: "cover", borderRadius: "6px", marginRight: ".5rem", verticalAlign: "middle" }}
-                        />
-                      ) : (
-                        <span style={{ fontSize: "1.5rem" }}>{p.emoji}</span>
-                      )}{" "}
-                      {p.name}
-                    </td>
-                    <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{categoryLabel(p.category)}</td>
-                    <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{p.material}</td>
-                    <td>
-                      <strong>R$ {p.price.toFixed(2)}</strong>
-                      {p.oldPrice && (
-                        <>
-                          <br />
-                          <small style={{ color: "var(--text-muted)", textDecoration: "line-through" }}>
-                            R$ {p.oldPrice.toFixed(2)}
-                          </small>
-                        </>
-                      )}
-                    </td>
-                    <td style={{ fontSize: ".82rem" }}>
-                      {p.costPrice ? (
-                        <>
-                          <div style={{ color: "var(--text-muted)" }}>Custo: R$ {p.costPrice.toFixed(2)}</div>
-                          <div style={{ color: p.price - p.costPrice >= 0 ? "var(--success)" : "var(--danger)" }}>
-                            {(((p.price - p.costPrice) / p.price) * 100).toFixed(0)}% margem
-                          </div>
-                        </>
-                      ) : (
-                        <span style={{ color: "var(--text-muted)" }}>—</span>
-                      )}
-                    </td>
-                    <td>
-                      <span style={{ color: p.stock > 0 ? "var(--success)" : "var(--danger)" }}>
-                        ● {p.stock > 0 ? `${p.stock} em estoque` : "Sem estoque"}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`status-badge ${p.active ? "status-active" : "status-inactive"}`}>
-                        {p.active ? "Ativo" : "Inativo"}
-                      </span>
-                    </td>
-                    <td>
-                      <button className="action-btn" onClick={() => openEdit(p)}>
-                        ✏️ Editar
-                      </button>
-                      <button className="action-btn" onClick={() => navigate(`/admin/precificacao?productId=${p.id}`)}>
-                        🧮 Calcular preço
-                      </button>
-                      {p.active ? (
-                        <button className="action-btn danger" onClick={() => handleDeactivate(p.id)}>
-                          🗑
-                        </button>
-                      ) : (
-                        <button className="action-btn" onClick={() => handleToggleActive(p.id, p.active)}>
-                          ▶ Ativar
-                        </button>
-                      )}
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={8} style={{ color: "var(--text-muted)" }}>
+                      Carregando...
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  products.map((p) => (
+                    <tr key={p.id}>
+                      <td>
+                        {p.imageUrl ? (
+                          <img
+                            src={p.imageUrl}
+                            alt={p.name}
+                            style={{ width: "28px", height: "28px", objectFit: "cover", borderRadius: "6px", marginRight: ".5rem", verticalAlign: "middle" }}
+                          />
+                        ) : (
+                          <span style={{ fontSize: "1.5rem" }}>{p.emoji}</span>
+                        )}{" "}
+                        {p.name}
+                      </td>
+                      <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{categoryLabel(p.category)}</td>
+                      <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{p.material}</td>
+                      <td>{priceCell(p)}</td>
+                      <td style={{ fontSize: ".82rem" }}>{marginCell(p)}</td>
+                      <td>{stockCell(p)}</td>
+                      <td>{productStatus(p)}</td>
+                      <td>{productActions(p)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mobile-cards">
+            {isLoading ? (
+              <div className="mobile-card" style={{ color: "var(--text-muted)" }}>
+                Carregando...
+              </div>
+            ) : (
+              products.map((p) => (
+                <div key={p.id} className={`mobile-card${p.active ? "" : " inactive"}`}>
+                  <div className="mobile-card-top">
+                    <ProductThumb
+                      imageUrl={p.imageUrl ?? null}
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${categoryLabel(p.category)} · ${p.material}`}
+                    />
+                    {productStatus(p)}
+                  </div>
+                  <div className="mobile-card-stats">
+                    <div>
+                      <span className="mobile-card-label">Preço</span>
+                      {priceCell(p)}
+                    </div>
+                    <div>
+                      <span className="mobile-card-label">Margem</span>
+                      {marginCell(p)}
+                    </div>
+                    <div>
+                      <span className="mobile-card-label">Estoque</span>
+                      {stockCell(p)}
+                    </div>
+                  </div>
+                  <div className="mobile-card-actions">{productActions(p)}</div>
+                </div>
+              ))
+            )}
+          </div>
+        </>
       )}
 
       {tab === "categories" && (
-        <div className="admin-table-wrap" style={{ marginTop: "1rem" }}>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Categoria</th>
-                <th>Slug</th>
-                <th>Ordem</th>
-                <th>Produtos</th>
-                <th>Status</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categories.length === 0 ? (
+        <>
+          <div className="admin-table-wrap desktop-table" style={{ marginTop: "1rem" }}>
+            <table className="admin-table">
+              <thead>
                 <tr>
-                  <td colSpan={6} style={{ color: "var(--text-muted)" }}>
-                    Nenhuma categoria cadastrada.
-                  </td>
+                  <th>Categoria</th>
+                  <th>Slug</th>
+                  <th>Ordem</th>
+                  <th>Produtos</th>
+                  <th>Status</th>
+                  <th>Ações</th>
                 </tr>
-              ) : (
-                categories.map((category) => (
-                  <tr key={category.id} style={{ opacity: category.active ? 1 : 0.5 }}>
-                    <td>
-                      {category.emoji} {category.name}
-                    </td>
-                    <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{category.slug}</td>
-                    <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{category.sortOrder}</td>
-                    <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{category.productsCount}</td>
-                    <td>
-                      <span className={`status-badge ${category.active ? "status-active" : "status-inactive"}`}>
-                        {category.active ? "Ativa" : "Inativa"}
-                      </span>
-                    </td>
-                    <td>
-                      <button className="action-btn" onClick={() => openCategoryModal(category)}>
-                        ✏️ Editar
-                      </button>
-                      <button className="action-btn danger" onClick={() => handleDeleteCategory(category)}>
-                        {category.productsCount > 0 ? "🚫 Desativar" : "🗑"}
-                      </button>
+              </thead>
+              <tbody>
+                {categories.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ color: "var(--text-muted)" }}>
+                      Nenhuma categoria cadastrada.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-          <p style={{ color: "var(--text-muted)", fontSize: ".78rem", padding: "0 1rem 1rem" }}>
-            O slug é gerado do nome na criação e não muda depois — é ele que os produtos guardam.
-            Renomear a categoria troca só o rótulo mostrado na loja.
-          </p>
-        </div>
+                ) : (
+                  categories.map((category) => (
+                    <tr key={category.id} style={{ opacity: category.active ? 1 : 0.5 }}>
+                      <td>
+                        {category.emoji} {category.name}
+                      </td>
+                      <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{category.slug}</td>
+                      <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{category.sortOrder}</td>
+                      <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{category.productsCount}</td>
+                      <td>{categoryStatus(category)}</td>
+                      <td>{categoryActions(category)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+            <p style={{ color: "var(--text-muted)", fontSize: ".78rem", padding: "0 1rem 1rem" }}>{SLUG_HINT}</p>
+          </div>
+
+          <div className="mobile-cards">
+            {categories.length === 0 ? (
+              <div className="mobile-card" style={{ color: "var(--text-muted)" }}>
+                Nenhuma categoria cadastrada.
+              </div>
+            ) : (
+              categories.map((category) => (
+                <div key={category.id} className={`mobile-card${category.active ? "" : " inactive"}`}>
+                  <div className="mobile-card-top">
+                    <ProductThumb
+                      imageUrl={null}
+                      emoji={category.emoji}
+                      name={category.name}
+                      subtitle={`slug: ${category.slug}`}
+                    />
+                    {categoryStatus(category)}
+                  </div>
+                  <div className="mobile-card-stats">
+                    <div>
+                      <span className="mobile-card-label">Ordem</span>
+                      {category.sortOrder}
+                    </div>
+                    <div>
+                      <span className="mobile-card-label">Produtos</span>
+                      {category.productsCount}
+                    </div>
+                  </div>
+                  <div className="mobile-card-actions">{categoryActions(category)}</div>
+                </div>
+              ))
+            )}
+            <p style={{ color: "var(--text-muted)", fontSize: ".78rem" }}>{SLUG_HINT}</p>
+          </div>
+        </>
       )}
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={`${editing ? "Editar" : "Novo"} Produto`}>

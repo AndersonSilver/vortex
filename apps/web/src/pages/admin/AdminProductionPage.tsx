@@ -16,6 +16,7 @@ import { useAdminOrders } from "../../hooks/useOrders";
 import { useAdminQuotes } from "../../hooks/useQuotes";
 import { Modal } from "../../components/Modal";
 import { useToast } from "../../components/Toast";
+import { brl } from "../../lib/format";
 
 const PRINTER_STATUS_BADGE: Record<PrinterDTO["status"], string> = {
   idle: "status-active",
@@ -543,7 +544,7 @@ export function AdminProductionPage() {
                   }}
                 >
                   <span>{log.description}</span>
-                  <span style={{ color: "var(--text-muted)" }}>{log.cost ? `R$ ${log.cost.toFixed(2)}` : ""}</span>
+                  <span style={{ color: "var(--text-muted)" }}>{log.cost ? brl(log.cost) : ""}</span>
                 </div>
               ))}
             </div>

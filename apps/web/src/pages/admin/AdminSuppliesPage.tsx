@@ -19,6 +19,7 @@ import { useExpenseCategories } from "../../hooks/useExpenseCategories";
 import { useSuppliers } from "../../hooks/useSuppliers";
 import { Modal } from "../../components/Modal";
 import { useToast } from "../../components/Toast";
+import { brl } from "../../lib/format";
 
 interface SupplyForm {
   name: string;
@@ -158,7 +159,7 @@ export function AdminSuppliesPage() {
 
       <p style={{ color: "var(--text-muted)", fontSize: ".85rem", marginBottom: "1rem" }}>
         Embalagem, consumível e peça de reposição. O custo médio é recalculado a cada entrada, já com o frete
-        rateado da compra. Valor total em estoque: <strong>R$ {totalStockValue.toFixed(2)}</strong>
+        rateado da compra. Valor total em estoque: <strong>{brl(totalStockValue)}</strong>
       </p>
 
       <div className="admin-table-wrap">
@@ -201,9 +202,9 @@ export function AdminSuppliesPage() {
                   <td>
                     {supply.quantityOnHand} {supply.unit}
                   </td>
-                  <td>R$ {supply.avgUnitCost.toFixed(4)}</td>
+                  <td>{brl(supply.avgUnitCost, 4)}</td>
                   <td>
-                    <strong>R$ {supply.stockValue.toFixed(2)}</strong>
+                    <strong>{brl(supply.stockValue)}</strong>
                   </td>
                   <td>
                     <button className="action-btn" onClick={() => openMovement(supply)}>

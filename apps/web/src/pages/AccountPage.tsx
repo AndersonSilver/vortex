@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useMyOrders } from "../hooks/useOrders";
 import { useAuthStore } from "../state/auth-store";
 import { StatusBadge } from "../components/StatusBadge";
+import { brl } from "../lib/format";
 
 export function AccountPage() {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ export function AccountPage() {
                         {order.items.map((i) => `${i.name} x${i.qty}`).join(", ")}
                       </td>
                       <td>
-                        <strong>R$ {order.total.toFixed(2)}</strong>
+                        <strong>{brl(order.total)}</strong>
                       </td>
                       <td style={{ fontSize: ".82rem" }}>{new Date(order.createdAt).toLocaleDateString("pt-BR")}</td>
                       <td>
@@ -92,7 +93,7 @@ export function AccountPage() {
                     <div className="order-card-footer">
                       <div>
                         <div className="order-card-label">Valor</div>
-                        <strong>R$ {order.total.toFixed(2)}</strong>
+                        <strong>{brl(order.total)}</strong>
                       </div>
                       <div>
                         <div className="order-card-label">Data</div>

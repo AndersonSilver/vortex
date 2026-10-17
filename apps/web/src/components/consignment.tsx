@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   CONSIGNMENT_MOVEMENT_TYPE_LABELS,
   CONSIGNMENT_REQUEST_STATUS_LABELS,
@@ -5,9 +6,7 @@ import {
   type ConsignmentRequestStatus,
 } from "@vortex/shared";
 
-export function brl(value: number): string {
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
+export { brl } from "../lib/format";
 
 export function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
@@ -17,6 +16,18 @@ export function formatDateTime(iso: string): string {
 export function formatMonth(month: string): string {
   const [year, m] = month.split("-").map(Number);
   return new Date(year, m - 1, 1).toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+}
+
+/** Estoque igual ou abaixo disso conta como "acabando" e entra nas sugestões de reposição. */
+export const LOW_STOCK = 1;
+
+/** "hoje", "ontem" ou "há N dias", contando dias de calendário. */
+export function relativeDay(date: Date): string {
+  const startOf = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((startOf(new Date()) - startOf(date)) / 86_400_000);
+  if (days <= 0) return "hoje";
+  if (days === 1) return "ontem";
+  return `há ${days} dias`;
 }
 
 export function todayISO(): string {
@@ -47,7 +58,17 @@ export function MovementTypeBadge({ type }: { type: ConsignmentMovementType }) {
   return <span className={`status-badge ${MOVEMENT_CLASS[type]}`}>{CONSIGNMENT_MOVEMENT_TYPE_LABELS[type]}</span>;
 }
 
-export function ProductThumb({ imageUrl, emoji, name }: { imageUrl: string | null; emoji: string; name: string }) {
+export function ProductThumb({
+  imageUrl,
+  emoji,
+  name,
+  subtitle,
+}: {
+  imageUrl: string | null;
+  emoji: string;
+  name: string;
+  subtitle?: ReactNode;
+}) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: ".7rem" }}>
       {imageUrl ? (
@@ -72,7 +93,10 @@ export function ProductThumb({ imageUrl, emoji, name }: { imageUrl: string | nul
           {emoji}
         </span>
       )}
-      <span>{name}</span>
+      <span>
+        {name}
+        {subtitle && <span style={{ display: "block", fontSize: ".78rem", color: "var(--text-muted)" }}>{subtitle}</span>}
+      </span>
     </div>
   );
 }

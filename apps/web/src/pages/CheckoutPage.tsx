@@ -11,6 +11,7 @@ import { useToast } from "../components/Toast";
 import { extractErrorMessage } from "../lib/api-client";
 import { fetchAddressByCep } from "../lib/cep";
 import { BR_STATES } from "../lib/br-states";
+import { brl } from "../lib/format";
 
 const SHIPPING_LABELS: Record<ShippingMethod, { icon: string; title: string }> = {
   pac: { icon: "📦", title: "PAC" },
@@ -361,7 +362,7 @@ export function CheckoutPage() {
                             {option
                               ? option.price === 0
                                 ? "Grátis"
-                                : `R$ ${option.price.toFixed(2)} · ${option.estimatedDays}d`
+                                : `${brl(option.price)} · ${option.estimatedDays}d`
                               : "—"}
                           </small>
                           {option && method !== "pickup" && (

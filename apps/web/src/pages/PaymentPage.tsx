@@ -6,6 +6,7 @@ import { useOrder } from "../hooks/useOrders";
 import { useCreatePayment } from "../hooks/usePayments";
 import { useToast } from "../components/Toast";
 import { ensureMercadoPagoInitialized } from "../lib/mercadopago";
+import { brl } from "../lib/format";
 
 export function PaymentPage() {
   const { orderId } = useParams();
@@ -96,7 +97,7 @@ export function PaymentPage() {
         <div className="checkout-form">
           <h2>💳 Pagamento — Pedido {order.orderNumber}</h2>
           <p style={{ color: "var(--text-muted)", fontSize: ".9rem", marginBottom: "1.5rem" }}>
-            Total a pagar: <strong style={{ color: "var(--purple)" }}>R$ {order.total.toFixed(2)}</strong>
+            Total a pagar: <strong style={{ color: "var(--purple)" }}>{brl(order.total)}</strong>
           </p>
 
           {order.paymentMethod === "pix" && (

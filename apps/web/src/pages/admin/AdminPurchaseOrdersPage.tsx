@@ -23,6 +23,7 @@ import { useExpenseCategories } from "../../hooks/useExpenseCategories";
 import { usePrinters } from "../../hooks/usePrinters";
 import { Modal } from "../../components/Modal";
 import { useToast } from "../../components/Toast";
+import { brl } from "../../lib/format";
 
 const STATUS_BADGE: Record<PurchaseOrderDTO["status"], string> = {
   pending: "status-pending",
@@ -64,9 +65,6 @@ function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function money(value: number): string {
-  return `R$ ${value.toFixed(2)}`;
-}
 
 export function AdminPurchaseOrdersPage() {
   const { data: orders = [], isLoading } = usePurchaseOrders();
@@ -283,7 +281,7 @@ export function AdminPurchaseOrdersPage() {
                     {po.items.length} {po.items.length === 1 ? "item" : "itens"}
                   </td>
                   <td>
-                    <strong>{money(po.totalCost)}</strong>
+                    <strong>{brl(po.totalCost)}</strong>
                   </td>
                   <td>
                     <span className={`status-badge ${STATUS_BADGE[po.status]}`}>
@@ -592,7 +590,7 @@ export function AdminPurchaseOrdersPage() {
 
         <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, marginTop: ".8rem" }}>
           <span>Total da compra</span>
-          <span>{money(orderTotal)}</span>
+          <span>{brl(orderTotal)}</span>
         </div>
 
         <button className="btn-primary" style={{ width: "100%", marginTop: "1rem" }} onClick={handleSave}>
@@ -631,9 +629,9 @@ export function AdminPurchaseOrdersPage() {
                   {item.unit}
                 </span>
                 <span>
-                  {money(item.totalCost)}
+                  {brl(item.totalCost)}
                   {item.allocatedCost !== null && item.allocatedCost !== item.totalCost && (
-                    <span style={{ color: "var(--text-muted)" }}> → {money(item.allocatedCost)}</span>
+                    <span style={{ color: "var(--text-muted)" }}> → {brl(item.allocatedCost)}</span>
                   )}
                 </span>
               </div>
@@ -641,20 +639,20 @@ export function AdminPurchaseOrdersPage() {
             <div style={{ fontSize: ".82rem", color: "var(--text-muted)", marginTop: ".6rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span>Itens</span>
-                <span>{money(viewOrder.itemsCost)}</span>
+                <span>{brl(viewOrder.itemsCost)}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span>Frete + encargos</span>
-                <span>{money(viewOrder.freightCost + viewOrder.otherCharges)}</span>
+                <span>{brl(viewOrder.freightCost + viewOrder.otherCharges)}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span>Desconto</span>
-                <span>-{money(viewOrder.discount)}</span>
+                <span>-{brl(viewOrder.discount)}</span>
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: ".6rem", fontWeight: 700 }}>
               <span>Total</span>
-              <span>{money(viewOrder.totalCost)}</span>
+              <span>{brl(viewOrder.totalCost)}</span>
             </div>
             {viewOrder.notes && (
               <p style={{ color: "var(--text-muted)", fontSize: ".82rem", marginTop: ".8rem" }}>{viewOrder.notes}</p>
