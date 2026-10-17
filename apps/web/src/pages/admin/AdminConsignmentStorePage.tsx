@@ -5,6 +5,7 @@ import {
   CONSIGNMENT_PAYMENT_METHODS,
   type ConsignmentPaymentMethod,
   type ConsignmentStockDTO,
+  type ConsignmentStoreDTO,
 } from "@vortex/shared";
 import { Modal } from "../../components/Modal";
 import { useToast } from "../../components/Toast";
@@ -37,6 +38,7 @@ import {
 } from "../../hooks/useConsignment";
 import { useProducts } from "../../hooks/useProducts";
 import { extractErrorMessage } from "../../lib/api-client";
+import { printConsignmentStock } from "../../lib/print-consignment";
 import { StoreFormModal } from "./AdminConsignmentStoresPage";
 import { RequestsTable } from "./AdminConsignmentRequestsPage";
 
@@ -88,7 +90,7 @@ export function AdminConsignmentStorePage() {
         ))}
       </div>
 
-      {tab === "stock" && <StockTab storeId={id} />}
+      {tab === "stock" && <StockTab store={store} />}
       {tab === "movements" && <MovementsTab storeId={id} />}
       {tab === "financial" && <FinancialTab storeId={id} />}
       {tab === "requests" && <RequestsTable storeId={id} />}
@@ -101,7 +103,8 @@ export function AdminConsignmentStorePage() {
 
 // --- Estoque -------------------------------------------------------------------------
 
-function StockTab({ storeId }: { storeId: string }) {
+function StockTab({ store }: { store: ConsignmentStoreDTO }) {
+  const storeId = store.id;
   const { data: stock = [], isLoading } = useConsignmentStoreStock(storeId);
   const { data: products = [] } = useProducts("all", true);
   const ship = useShipToConsignmentStore(storeId);
@@ -217,12 +220,20 @@ function StockTab({ storeId }: { storeId: string }) {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: ".6rem", marginBottom: "1rem" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: ".6rem", marginBottom: "1rem" }}>
         <button className="btn-primary" onClick={() => openMode("ship")}>
           🚚 Enviar peças
         </button>
         <button className="btn-ghost" onClick={() => openMode("return")} disabled={returnOptions.length === 0}>
           ↩️ Registrar devolução
+        </button>
+        <button
+          className="btn-ghost"
+          onClick={() => printConsignmentStock(store, stock)}
+          disabled={isLoading}
+          title="Imprimir ou salvar em PDF o que a loja tem hoje"
+        >
+          🖨️ Imprimir estoque
         </button>
       </div>
 
