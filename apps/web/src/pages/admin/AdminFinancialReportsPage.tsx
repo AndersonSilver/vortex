@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useProductProfitReport, useProfitLossReport, useSalesReport } from "../../hooks/useReports";
+import { brl } from "../../lib/format";
 
 function toISODate(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -26,6 +27,7 @@ export function AdminFinancialReportsPage() {
   const { data: profitLoss } = useProfitLossReport(from, to);
 
   const maxProfit = Math.max(...(sales?.byDay.map((d) => Math.abs(d.profit)) ?? [1]), 1);
+  const noSales = !sales || sales.byDay.every((day) => day.profit === 0);
 
   function applyPreset(days: number) {
     setFrom(daysAgo(days));
@@ -68,17 +70,17 @@ export function AdminFinancialReportsPage() {
           <div className="kpi-grid">
             <div className="kpi-card">
               <div className="kpi-label">Receita</div>
-              <div className="kpi-value">R$ {sales.revenue.toFixed(2)}</div>
+              <div className="kpi-value">{brl(sales.revenue)}</div>
               <div className="kpi-icon">💰</div>
             </div>
             <div className="kpi-card">
               <div className="kpi-label">Custo</div>
-              <div className="kpi-value">R$ {sales.cost.toFixed(2)}</div>
+              <div className="kpi-value">{brl(sales.cost)}</div>
               <div className="kpi-icon">🧾</div>
             </div>
             <div className="kpi-card">
               <div className="kpi-label">Lucro</div>
-              <div className="kpi-value">R$ {sales.profit.toFixed(2)}</div>
+              <div className="kpi-value">{brl(sales.profit)}</div>
               <div className="kpi-icon">💹</div>
             </div>
             <div className="kpi-card">
@@ -95,24 +97,34 @@ export function AdminFinancialReportsPage() {
 
           <div className="chart-wrap" style={{ marginBottom: "1.5rem" }}>
             <div className="chart-title">Lucro por dia</div>
-            <div className="chart-bars">
-              {sales.byDay.map((day, i) => (
-                <div className="chart-bar-wrap" key={i}>
-                  <div
-                    className="chart-bar"
-                    style={{
-                      height: `${Math.max((Math.abs(day.profit) / maxProfit) * 100, 2)}px`,
-                      background: day.profit < 0 ? "var(--danger)" : undefined,
-                    }}
-                    title={`R$ ${day.profit.toFixed(2)}`}
-                  />
-                  <div className="chart-bar-label">{day.label}</div>
-                </div>
-              ))}
-            </div>
-            <div className="chart-legend">
-              <span style={{ color: "var(--purple)" }}>■</span> Lucro · <span style={{ color: "var(--danger)" }}>■</span> Prejuízo
-            </div>
+            {noSales ? (
+              <p style={{ color: "var(--text-muted)", fontSize: ".88rem", padding: "2rem 0" }}>
+                Nenhuma venda no período.
+              </p>
+            ) : (
+              <div className="chart-bars">
+                {sales.byDay.map((day, i) => (
+                  <div className="chart-bar-wrap" key={i}>
+                    <div
+                      className="chart-bar"
+                      style={{
+                        height: `${Math.max((Math.abs(day.profit) / maxProfit) * 100, 2)}px`,
+                        // Dia sem lucro nem prejuízo fica neutro, para não parecer lucro.
+                        background: day.profit < 0 ? "var(--danger)" : day.profit === 0 ? "var(--border)" : undefined,
+                      }}
+                      title={brl(day.profit)}
+                    />
+                    <div className="chart-bar-label">{day.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!noSales && (
+              <div className="chart-legend">
+                <span style={{ color: "var(--purple)" }}>■</span> Lucro · <span style={{ color: "var(--danger)" }}>■</span>{" "}
+                Prejuízo
+              </div>
+            )}
           </div>
         </>
       )}
@@ -126,31 +138,31 @@ export function AdminFinancialReportsPage() {
             <tbody>
               <tr>
                 <td>Receita</td>
-                <td style={{ textAlign: "right" }}>R$ {profitLoss.revenue.toFixed(2)}</td>
+                <td style={{ textAlign: "right" }}>{brl(profitLoss.revenue)}</td>
               </tr>
               <tr>
                 <td>(−) Custo dos produtos vendidos</td>
-                <td style={{ textAlign: "right" }}>R$ {profitLoss.productCost.toFixed(2)}</td>
+                <td style={{ textAlign: "right" }}>{brl(profitLoss.productCost)}</td>
               </tr>
               <tr>
                 <td>
                   <strong>= Lucro bruto</strong>
                 </td>
                 <td style={{ textAlign: "right" }}>
-                  <strong>R$ {profitLoss.grossProfit.toFixed(2)}</strong>
+                  <strong>{brl(profitLoss.grossProfit)}</strong>
                 </td>
               </tr>
               <tr>
                 <td>(−) Custos variáveis lançados</td>
-                <td style={{ textAlign: "right" }}>R$ {profitLoss.variableExpenses.toFixed(2)}</td>
+                <td style={{ textAlign: "right" }}>{brl(profitLoss.variableExpenses)}</td>
               </tr>
               <tr>
                 <td>(−) Custos fixos</td>
-                <td style={{ textAlign: "right" }}>R$ {profitLoss.fixedExpenses.toFixed(2)}</td>
+                <td style={{ textAlign: "right" }}>{brl(profitLoss.fixedExpenses)}</td>
               </tr>
               <tr>
                 <td>(−) Depreciação</td>
-                <td style={{ textAlign: "right" }}>R$ {profitLoss.depreciation.toFixed(2)}</td>
+                <td style={{ textAlign: "right" }}>{brl(profitLoss.depreciation)}</td>
               </tr>
               <tr>
                 <td>
@@ -158,7 +170,7 @@ export function AdminFinancialReportsPage() {
                 </td>
                 <td style={{ textAlign: "right" }}>
                   <strong style={{ color: profitLoss.netProfit < 0 ? "var(--danger)" : undefined }}>
-                    R$ {profitLoss.netProfit.toFixed(2)} ({profitLoss.netMarginPercent.toFixed(1)}%)
+                    {brl(profitLoss.netProfit)} ({profitLoss.netMarginPercent.toFixed(1)}%)
                   </strong>
                 </td>
               </tr>
@@ -204,10 +216,10 @@ export function AdminFinancialReportsPage() {
                 <tr key={p.productId}>
                   <td>{p.name}</td>
                   <td style={{ color: "var(--text-muted)" }}>{p.unitsSold}</td>
-                  <td>R$ {p.revenue.toFixed(2)}</td>
-                  <td style={{ color: "var(--text-muted)" }}>R$ {p.cost.toFixed(2)}</td>
+                  <td>{brl(p.revenue)}</td>
+                  <td style={{ color: "var(--text-muted)" }}>{brl(p.cost)}</td>
                   <td style={{ color: p.profit >= 0 ? "var(--success)" : "var(--danger)" }}>
-                    R$ {p.profit.toFixed(2)}
+                    {brl(p.profit)}
                   </td>
                   <td>{p.marginPercent.toFixed(0)}%</td>
                 </tr>

@@ -3,6 +3,7 @@ import type { CouponType } from "@vortex/shared";
 import { useAdminCoupons, useCreateCoupon, useDeleteCoupon, useToggleCoupon } from "../../hooks/useCoupons";
 import { Modal } from "../../components/Modal";
 import { useToast } from "../../components/Toast";
+import { brl } from "../../lib/format";
 
 const TYPE_LABELS: Record<CouponType, string> = { percent: "%", fixed: "R$", free_shipping: "Frete" };
 
@@ -98,10 +99,10 @@ export function AdminCouponsPage() {
                   <td>{TYPE_LABELS[c.type]}</td>
                   <td>
                     <strong>
-                      {c.type === "percent" ? `${c.value}%` : c.type === "fixed" ? `R$ ${c.value.toFixed(2)}` : "100%"}
+                      {c.type === "percent" ? `${c.value}%` : c.type === "fixed" ? brl(c.value) : "100%"}
                     </strong>
                   </td>
-                  <td>{c.minOrder > 0 ? `R$ ${c.minOrder.toFixed(2)}` : "Sem mínimo"}</td>
+                  <td>{c.minOrder > 0 ? brl(c.minOrder) : "Sem mínimo"}</td>
                   <td>
                     {c.uses}/{c.maxUses}
                   </td>

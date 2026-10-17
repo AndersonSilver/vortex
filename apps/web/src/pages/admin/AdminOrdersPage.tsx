@@ -30,6 +30,7 @@ import { useToast } from "../../components/Toast";
 import { extractErrorMessage } from "../../lib/api-client";
 import { fetchAddressByCep } from "../../lib/cep";
 import { BR_STATES } from "../../lib/br-states";
+import { brl } from "../../lib/format";
 
 const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   pix: "PIX",
@@ -493,7 +494,7 @@ export function AdminOrdersPage() {
                     </div>
                   </td>
                   <td>
-                    <strong>R$ {order.total.toFixed(2)}</strong>
+                    <strong>{brl(order.total)}</strong>
                   </td>
                   <td style={{ fontSize: ".82rem" }}>{new Date(order.createdAt).toLocaleDateString("pt-BR")}</td>
                   <td>
@@ -609,13 +610,13 @@ export function AdminOrdersPage() {
               <div>
                 <div style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Total do pedido</div>
                 <div style={{ fontFamily: "Orbitron, monospace", color: "var(--purple)", fontWeight: 700, fontSize: "1.25rem" }}>
-                  R$ {viewOrder.total.toFixed(2)}
+                  {brl(viewOrder.total)}
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>Lucro (itens do pedido)</div>
                 <div style={{ color: profit >= 0 ? "var(--success)" : "var(--danger)", fontWeight: 700, fontSize: "1.1rem" }}>
-                  R$ {profit.toFixed(2)}
+                  {brl(profit)}
                   {revenue > 0 && (
                     <span style={{ color: "var(--text-muted)", fontWeight: 400, fontSize: ".8rem" }}>
                       {" "}
@@ -635,7 +636,7 @@ export function AdminOrdersPage() {
                 <div className="section-divider" />
                 <label style={{ fontSize: ".82rem", color: "var(--text-muted)" }}>💰 Desconto (pedido manual)</label>
                 <div style={{ fontSize: ".82rem", color: "var(--text-muted)", marginTop: ".2rem" }}>
-                  Aplicado atualmente: R$ {viewOrder.discount.toFixed(2)}
+                  Aplicado atualmente: {brl(viewOrder.discount)}
                   {viewOrder.discountType === "percent" && ` (${viewOrder.discountValue}%)`}
                 </div>
                 <div className="form-row" style={{ marginTop: ".4rem" }}>
@@ -840,7 +841,7 @@ export function AdminOrdersPage() {
                 <option value="">Produto</option>
                 {products.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} · R$ {p.price.toFixed(2)}
+                    {p.name} · {brl(p.price)}
                   </option>
                 ))}
               </select>
@@ -1013,7 +1014,7 @@ export function AdminOrdersPage() {
         >
           <span>Total</span>
           <span style={{ fontFamily: "Orbitron, monospace", color: "var(--purple)" }}>
-            R$ {manualTotal.toFixed(2)}
+            {brl(manualTotal)}
           </span>
         </div>
 

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useDashboardStats } from "../../hooks/useAdmin";
 import { useAdminOrders } from "../../hooks/useOrders";
 import { StatusBadge } from "../../components/StatusBadge";
+import { brl } from "../../lib/format";
 
 export function AdminDashboardPage() {
   const { data: stats, isLoading } = useDashboardStats();
@@ -23,12 +24,12 @@ export function AdminDashboardPage() {
       <div className="kpi-grid">
         <div className="kpi-card">
           <div className="kpi-label">Faturamento Mês</div>
-          <div className="kpi-value">R$ {stats.monthRevenue.toFixed(2)}</div>
+          <div className="kpi-value">{brl(stats.monthRevenue)}</div>
           <div className="kpi-icon">💰</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-label">Lucro do Mês</div>
-          <div className="kpi-value">R$ {stats.monthProfit.toFixed(2)}</div>
+          <div className="kpi-value">{brl(stats.monthProfit)}</div>
           <div className="kpi-icon">💹</div>
           <div style={{ fontSize: ".72rem", color: "var(--text-muted)" }}>{stats.monthMarginPercent.toFixed(1)}% margem</div>
         </div>
@@ -39,7 +40,7 @@ export function AdminDashboardPage() {
         </div>
         <div className="kpi-card">
           <div className="kpi-label">Ticket Médio</div>
-          <div className="kpi-value">R$ {stats.averageTicket.toFixed(2)}</div>
+          <div className="kpi-value">{brl(stats.averageTicket)}</div>
           <div className="kpi-icon">📈</div>
         </div>
         <div className="kpi-card">
@@ -54,7 +55,7 @@ export function AdminDashboardPage() {
           <div className="chart-bars">
             {stats.salesLast7Days.map((day, i) => (
               <div className="chart-bar-wrap" key={i}>
-                <div className="chart-bar" style={{ height: `${(day.total / maxSale) * 100}px` }} title={`R$ ${day.total}`} />
+                <div className="chart-bar" style={{ height: `${(day.total / maxSale) * 100}px` }} title={brl(day.total)} />
                 <div className="chart-bar-label">{day.label}</div>
               </div>
             ))}
@@ -106,7 +107,7 @@ export function AdminDashboardPage() {
                   {order.items.map((i) => `${i.name} x${i.qty}`).join(", ").slice(0, 35)}
                 </td>
                 <td>
-                  <strong>R$ {order.total.toFixed(2)}</strong>
+                  <strong>{brl(order.total)}</strong>
                 </td>
                 <td>
                   <StatusBadge status={order.status} />

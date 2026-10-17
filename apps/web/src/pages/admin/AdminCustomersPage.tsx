@@ -1,4 +1,5 @@
 import { useAdminCustomers } from "../../hooks/useAdmin";
+import { brl } from "../../lib/format";
 
 export function AdminCustomersPage() {
   const { data: customers = [], isLoading } = useAdminCustomers();
@@ -37,7 +38,7 @@ export function AdminCustomersPage() {
                     <span style={{ fontFamily: "Orbitron, monospace", color: "var(--purple)" }}>{c.ordersCount}</span>
                   </td>
                   <td>
-                    <strong>R$ {c.totalSpent.toFixed(2)}</strong>
+                    <strong>{brl(c.totalSpent)}</strong>
                   </td>
                   <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>
                     {new Date(c.createdAt).toLocaleDateString("pt-BR")}

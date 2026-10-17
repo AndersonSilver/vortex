@@ -3,6 +3,7 @@ import type { CartItemDTO } from "@vortex/shared";
 import { useApplyCoupon } from "../hooks/useCoupons";
 import { useCheckoutStore } from "../state/checkout-store";
 import { useToast } from "./Toast";
+import { brl } from "../lib/format";
 
 interface OrderSummaryProps {
   items: CartItemDTO[];
@@ -33,7 +34,7 @@ export function OrderSummary({ items, shippingCost, shippingLabel, checkoutActio
             result.coupon.type === "percent"
               ? result.coupon.value + "% off"
               : result.coupon.type === "fixed"
-                ? `R$ ${result.coupon.value} off`
+                ? `${brl(result.coupon.value)} off`
                 : "Frete grátis"
           }`,
           "success",
@@ -56,14 +57,14 @@ export function OrderSummary({ items, shippingCost, shippingLabel, checkoutActio
               <span className="summary-item-name">{item.product.name}</span>
               <span className="summary-item-qty">Qtd: {item.qty}</span>
             </div>
-            <span className="summary-item-price">R$ {(item.product.price * item.qty).toFixed(2)}</span>
+            <span className="summary-item-price">{brl(item.product.price * item.qty)}</span>
           </div>
         ))}
       </div>
       <hr style={{ border: "none", borderTop: "1px solid var(--border)", margin: ".5rem 0" }} />
       <div className="summary-row">
         <span>Subtotal</span>
-        <span>R$ {subtotal.toFixed(2)}</span>
+        <span>{brl(subtotal)}</span>
       </div>
       <div className="summary-row">
         <span>Frete{shippingLabel ? ` (${shippingLabel})` : ""}</span>
@@ -73,19 +74,19 @@ export function OrderSummary({ items, shippingCost, shippingLabel, checkoutActio
           ) : effectiveShipping === 0 ? (
             <span style={{ color: "var(--success)" }}>Grátis</span>
           ) : (
-            `R$ ${effectiveShipping.toFixed(2)}`
+            brl(effectiveShipping)
           )}
         </span>
       </div>
       {couponResult && (
         <div className="summary-row" style={{ color: "var(--success)" }}>
           <span>🎟️ {couponResult.coupon.code}</span>
-          <span>{freeShippingCoupon ? "Frete grátis" : `− R$ ${discount.toFixed(2)}`}</span>
+          <span>{freeShippingCoupon ? "Frete grátis" : `− ${brl(discount)}`}</span>
         </div>
       )}
       <div className="summary-row total">
         <span>Total</span>
-        <span>R$ {total.toFixed(2)}</span>
+        <span>{brl(total)}</span>
       </div>
       <div style={{ marginTop: "1rem" }}>
         <div style={{ fontSize: ".78rem", color: "var(--text-muted)", marginBottom: ".4rem" }}>

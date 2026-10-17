@@ -5,6 +5,7 @@ import { useExpenseCategories } from "../../hooks/useExpenseCategories";
 import { usePrinters } from "../../hooks/usePrinters";
 import { Modal } from "../../components/Modal";
 import { useToast } from "../../components/Toast";
+import { brl } from "../../lib/format";
 
 const STATUS_BADGE: Record<AssetStatus, string> = {
   active: "status-delivered",
@@ -119,7 +120,7 @@ export function AdminAssetsPage() {
 
       <p style={{ color: "var(--text-muted)", fontSize: ".85rem", marginBottom: "1rem" }}>
         Impressoras, ferramentas e móveis. A depreciação linear destes ativos alimenta o custo de máquina por hora
-        na precificação. Depreciação mensal somada: <strong>R$ {monthlyTotal.toFixed(2)}</strong>
+        na precificação. Depreciação mensal somada: <strong>{brl(monthlyTotal)}</strong>
       </p>
 
       <div className="admin-table-wrap">
@@ -162,10 +163,10 @@ export function AdminAssetsPage() {
                   <td style={{ fontSize: ".82rem" }}>
                     {new Date(`${asset.acquiredAt}T00:00:00`).toLocaleDateString("pt-BR")}
                   </td>
-                  <td>R$ {asset.acquisitionCost.toFixed(2)}</td>
-                  <td>R$ {asset.monthlyDepreciation.toFixed(2)}</td>
-                  <td>R$ {asset.bookValue.toFixed(2)}</td>
-                  <td>{asset.costPerHour !== null ? `R$ ${asset.costPerHour.toFixed(2)}` : "—"}</td>
+                  <td>{brl(asset.acquisitionCost)}</td>
+                  <td>{brl(asset.monthlyDepreciation)}</td>
+                  <td>{brl(asset.bookValue)}</td>
+                  <td>{asset.costPerHour !== null ? brl(asset.costPerHour) : "—"}</td>
                   <td>
                     <span className={`status-badge ${STATUS_BADGE[asset.status]}`}>
                       {ASSET_STATUS_LABELS[asset.status]}

@@ -1,9 +1,10 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { SidebarLayout, type SidebarNavItem } from "../../components/SidebarLayout";
 import { useMyConsignmentSummary } from "../../hooks/useConsignment";
 import { useAuthStore } from "../../state/auth-store";
 
-const NAV_ITEMS = [
+const NAV_ITEMS: SidebarNavItem[] = [
   { to: "/consignado", icon: "📊", label: "Painel", end: true },
   { to: "/consignado/produtos", icon: "🖨️", label: "Produtos e vendas" },
   { to: "/consignado/reposicao", icon: "📦", label: "Reposição" },
@@ -18,35 +19,18 @@ export function ConsignadoLayout() {
   const { data: summary } = useMyConsignmentSummary();
 
   return (
-    <div className="admin-layout">
-      <div className="admin-sidebar">
-        <div className="admin-sidebar-logo">
-          <div className="nav-logo" style={{ fontSize: "1rem" }}>
-            VÓRTEX 3D
-          </div>
-          <span>{summary?.store.name ?? "Loja parceira"}</span>
-        </div>
-        <nav className="admin-nav">
-          {NAV_ITEMS.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.end}>
-              <span>{item.icon}</span> {item.label}
-            </NavLink>
-          ))}
-          <a
-            className="push-bottom"
-            onClick={() => {
-              logout();
-              queryClient.clear();
-              navigate("/entrar");
-            }}
-          >
-            <span>🚪</span> Sair
-          </a>
-        </nav>
-      </div>
-      <div className="admin-main">
-        <Outlet />
-      </div>
-    </div>
+    <SidebarLayout
+      subtitle={summary?.store.name ?? "Loja parceira"}
+      items={NAV_ITEMS}
+      footer={{
+        icon: "🚪",
+        label: "Sair",
+        onClick: () => {
+          logout();
+          queryClient.clear();
+          navigate("/entrar");
+        },
+      }}
+    />
   );
 }

@@ -17,6 +17,7 @@ import {
 import { useSuppliers } from "../../hooks/useSuppliers";
 import { Modal } from "../../components/Modal";
 import { useToast } from "../../components/Toast";
+import { brl } from "../../lib/format";
 
 interface FilamentFormState {
   brand: string;
@@ -237,7 +238,7 @@ export function AdminFilamentsPage() {
                       </div>
                     </td>
                     <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>
-                      R$ {(costPerGram(f) * 1000).toFixed(2)}
+                      {brl(costPerGram(f) * 1000)}
                     </td>
                     <td style={{ color: "var(--text-muted)", fontSize: ".82rem" }}>{f.supplierName ?? "—"}</td>
                     <td>

@@ -10,6 +10,7 @@ import { useToast } from "../components/Toast";
 import { useAuthStore } from "../state/auth-store";
 import { extractErrorMessage } from "../lib/api-client";
 import { fetchAddressByCep, type CepLookupResult } from "../lib/cep";
+import { brl } from "../lib/format";
 
 const SHIPPING_LABELS: Record<ShippingMethod, { icon: string; title: string }> = {
   pac: { icon: "📦", title: "PAC" },
@@ -198,7 +199,7 @@ export function ProductDetailPage() {
               </span>
             </div>
             <div className="detail-price">
-              R$ {product.price.toFixed(2)} {product.oldPrice && <span>R$ {product.oldPrice.toFixed(2)}</span>}
+              {brl(product.price)} {product.oldPrice && <span>{brl(product.oldPrice)}</span>}
             </div>
             <p className="detail-desc">{product.description}</p>
             <div className="detail-options">
@@ -275,7 +276,7 @@ export function ProductDetailPage() {
                           </span>
                         </span>
                         <span className="shipping-option-price">
-                          {option.price === 0 ? "Grátis" : `R$ ${option.price.toFixed(2)}`}
+                          {option.price === 0 ? "Grátis" : brl(option.price)}
                         </span>
                       </button>
                     );

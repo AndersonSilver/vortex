@@ -1991,6 +1991,42 @@ footer {
   padding: 2rem;
   width: 100%;
 }
+/* Botão ☰ e fundo escuro do menu: só aparecem no celular. */
+.admin-menu-toggle,
+.admin-sidebar-backdrop {
+  display: none;
+}
+.admin-menu-toggle {
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  margin-bottom: 1.2rem;
+  padding: 0.7rem 1rem;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.92rem;
+  text-align: left;
+  cursor: pointer;
+}
+.admin-menu-toggle-icon {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  background: rgba(108, 59, 255, 0.15);
+  font-size: 1.05rem;
+}
+.admin-menu-toggle-hint {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
 .admin-header {
   display: flex;
   justify-content: space-between;
@@ -2057,6 +2093,431 @@ footer {
   top: 1.2rem;
   font-size: 2rem;
   opacity: 0.2;
+}
+
+/* STOCK SUMMARY (resumo compacto ao lado da busca) */
+.stock-summary {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.stock-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.35rem 1.1rem 0.35rem 0.4rem;
+}
+.stock-summary-link {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.stock-summary-link:hover {
+  border-color: var(--warning);
+}
+.stock-summary-icon {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  background: rgba(108, 59, 255, 0.15);
+  font-size: 1rem;
+}
+.stock-summary-label {
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.stock-summary-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+/* PRICING (calculadora de preço do admin) */
+.pricing-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+}
+.pricing-grid {
+  align-items: start;
+}
+.pricing-result {
+  position: sticky;
+  top: 84px;
+}
+.pricing-breakdown {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.pricing-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.3rem;
+}
+.pricing-breakdown-pct {
+  display: inline-block;
+  min-width: 2.6rem;
+  text-align: right;
+  color: var(--text-muted);
+}
+.pricing-sticky {
+  display: none;
+}
+@media (max-width: 900px) {
+  .pricing-result {
+    position: static;
+  }
+  .pricing-page {
+    padding-bottom: 4.5rem;
+  }
+  .pricing-sticky {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 800;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.8rem 1rem;
+    background: rgba(18, 18, 26, 0.95);
+    backdrop-filter: blur(12px);
+    border: none;
+    border-top: 1px solid var(--border);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+}
+
+/* TABELAS EM CARDS: no celular toda .admin-table dos painéis vira uma lista de cards. Os rótulos
+   (data-label) são gravados por lib/responsive-tables.ts a partir do cabeçalho da tabela. */
+@media (max-width: 768px) {
+  .admin-table[data-cards] thead {
+    display: none;
+  }
+  .admin-table[data-cards],
+  .admin-table[data-cards] tbody,
+  .admin-table[data-cards] tr,
+  .admin-table[data-cards] td {
+    display: block;
+    width: 100%;
+  }
+  .admin-table[data-cards] tr {
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .admin-table[data-cards] tr:last-child {
+    border-bottom: none;
+  }
+  .admin-table[data-cards] td {
+    padding: 0.3rem 0;
+    border: none;
+    text-align: right;
+    overflow: hidden;
+  }
+  .admin-table[data-cards] tr:hover td {
+    background: none;
+  }
+  .admin-table[data-cards] td::before {
+    content: attr(data-label);
+    float: left;
+    max-width: 45%;
+    margin-right: 1rem;
+    text-align: left;
+    font-size: 0.68rem;
+    line-height: 1.6rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  /* A primeira coluna vira o título do card. */
+  .admin-table[data-cards] td:first-child {
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding-bottom: 0.5rem;
+  }
+  .admin-table[data-cards] td[colspan] {
+    font-weight: 400;
+  }
+  .admin-table[data-cards] td:first-child::before,
+  .admin-table[data-cards] td[data-label=""]::before {
+    display: none;
+  }
+  /* Coluna sem título (normalmente a de ações): botões alinhados à esquerda, embaixo do card. */
+  .admin-table[data-cards] td[data-label=""]:not(:first-child) {
+    text-align: left;
+    padding-top: 0.6rem;
+  }
+  .admin-table[data-cards] td[data-label=""] .action-btn {
+    margin: 0.2rem 0.3rem 0.2rem 0;
+    padding: 0.45rem 0.8rem;
+  }
+}
+
+/* MOBILE CARDS: no celular a tabela (.desktop-table) some e cada linha vira um card. */
+.mobile-cards {
+  display: none;
+}
+.mobile-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+.mobile-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+.mobile-card-top .status-badge {
+  flex-shrink: 0;
+}
+.mobile-card-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 0.6rem;
+  margin: 0.9rem 0;
+  padding: 0.8rem 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+.mobile-card-label {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.mobile-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.mobile-card-actions .action-btn {
+  flex: 1;
+  padding: 0.6rem;
+  font-size: 0.85rem;
+  text-align: center;
+}
+.mobile-card-actions .action-btn.icon-only {
+  flex: 0 0 auto;
+  padding-inline: 1rem;
+}
+.mobile-card.inactive {
+  opacity: 0.6;
+}
+@media (max-width: 768px) {
+  .stock-summary {
+    width: 100%;
+  }
+  .stock-summary-item {
+    flex: 1 1 140px;
+  }
+  .desktop-table {
+    display: none;
+  }
+  .mobile-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.8rem;
+  }
+}
+
+/* PANELS (grade de cards e passos do painel do consignado) */
+.panel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+.how-steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.how-steps li {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+}
+.how-steps strong {
+  font-size: 0.9rem;
+}
+.how-steps p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+.how-step-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  background: rgba(108, 59, 255, 0.15);
+}
+.top-products {
+  list-style: none;
+  padding: 1.2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.top-products-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.88rem;
+  margin-bottom: 0.4rem;
+}
+.top-products-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--bg3);
+}
+.top-products-bar {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--purple);
+}
+.panel-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+}
+.suggestion-list {
+  list-style: none;
+  padding: 0.3rem 1.5rem 0.8rem;
+}
+.suggestion-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+.suggestion-list li:last-child {
+  border-bottom: none;
+}
+.request-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.request-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.5rem;
+}
+.request-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+}
+.request-steps {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+}
+.request-steps li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+.request-steps li:not(:last-child)::after {
+  content: "";
+  width: 2.5rem;
+  height: 2px;
+  margin-left: 0.1rem;
+  border-radius: 1px;
+  background: var(--border);
+}
+.request-steps li.done::after {
+  background: var(--purple);
+}
+.request-steps li.current {
+  color: var(--text);
+  font-weight: 600;
+}
+.request-step-dot {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+}
+.request-steps li.done .request-step-dot {
+  background: var(--purple);
+  border-color: var(--purple);
+  color: #fff;
+}
+.request-steps li.current .request-step-dot {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+.request-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.request-item {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.85rem;
+}
+@media (max-width: 900px) {
+  .panel-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .request-steps {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .request-steps li::after {
+    display: none;
+  }
 }
 
 /* TABLES */
@@ -2580,11 +3041,82 @@ footer {
   .coupon-input button {
     width: 100%;
   }
+  /* No celular o menu lateral vira gaveta, aberta pelo botão ☰. */
   .admin-sidebar {
-    display: none;
+    z-index: 900;
+    width: 270px;
+    transform: translateX(-100%);
+    /* Fechada, sai também do foco do teclado; o visibility só muda depois que a animação termina. */
+    visibility: hidden;
+    transition:
+      transform 0.25s ease,
+      visibility 0s 0.25s;
+  }
+  .admin-sidebar.open {
+    transform: translateX(0);
+    visibility: visible;
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.5);
+    transition: transform 0.25s ease;
+  }
+  .admin-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 64px 0 0 0;
+    z-index: 890;
+    background: rgba(0, 0, 0, 0.55);
+  }
+  .admin-menu-toggle {
+    display: flex;
   }
   .admin-main {
     margin-left: 0;
+    padding: 1.25rem 1rem;
+  }
+  .search-wrap {
+    max-width: none;
+  }
+  /* Cabeçalho das páginas: busca na largura toda e botões dividindo a linha. */
+  .admin-header {
+    gap: 0.8rem;
+    margin-bottom: 1.4rem;
+  }
+  .admin-header > .search-wrap {
+    flex: 1 1 100%;
+    order: 1;
+  }
+  .admin-header > .btn-primary,
+  .admin-header > .btn-outline,
+  .admin-header > .btn-ghost {
+    flex: 1 1 140px;
+    order: 2;
+  }
+  /* Cards de números dois por linha, com o valor menor para caber. */
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+    margin-bottom: 1.4rem;
+  }
+  .kpi-card {
+    padding: 1rem;
+  }
+  .kpi-label {
+    font-size: 0.66rem;
+  }
+  .kpi-value {
+    font-size: 1.2rem;
+    overflow-wrap: anywhere;
+  }
+  .kpi-icon {
+    font-size: 1.4rem;
+    right: 0.8rem;
+    top: 0.8rem;
+  }
+  .chart-bars {
+    overflow-x: auto;
+    padding-bottom: 0.3rem;
+  }
+  .chart-bar-wrap {
+    min-width: 30px;
   }
   .stats {
     gap: 1.5rem;

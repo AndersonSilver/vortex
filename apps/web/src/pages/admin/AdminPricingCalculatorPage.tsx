@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { ProductInput } from "@vortex/shared";
 import { useFilaments } from "../../hooks/useFilaments";
@@ -7,6 +7,7 @@ import { usePrinters } from "../../hooks/usePrinters";
 import { useStoreSettings } from "../../hooks/useSettings";
 import { useCostRates } from "../../hooks/useExpenses";
 import { useToast } from "../../components/Toast";
+import { brl } from "../../lib/format";
 
 // Potência de referência usada quando nenhuma impressora cadastrada é selecionada.
 const REFERENCE_PRINTER_WATTAGE = 150;
@@ -32,6 +33,28 @@ export function AdminPricingCalculatorPage() {
   const [wastePercent, setWastePercent] = useState(settings?.defaultWasteRatePercent ?? 5);
   const [marginPercent, setMarginPercent] = useState(settings?.defaultMarginPercent ?? 40);
   const [targetProductId, setTargetProductId] = useState(preselectedProductId);
+  const resultRef = useRef<HTMLDivElement>(null);
+
+  // Margem e perda padrão vêm das configurações, que chegam depois do primeiro render.
+  const settingsApplied = useRef(false);
+  useEffect(() => {
+    if (!settings || settingsApplied.current) return;
+    settingsApplied.current = true;
+    setWastePercent(settings.defaultWasteRatePercent);
+    setMarginPercent(settings.defaultMarginPercent);
+  }, [settings]);
+
+  // Vindo do "Calcular preço" de um produto: carrega o filamento, o peso e o tempo salvos nele.
+  const productApplied = useRef(false);
+  useEffect(() => {
+    if (!preselectedProductId || productApplied.current) return;
+    const product = products.find((p) => p.id === preselectedProductId);
+    if (!product) return;
+    productApplied.current = true;
+    if (product.filamentId) setFilamentId(product.filamentId);
+    if (product.weightGrams) setWeightGrams(String(product.weightGrams));
+    if (product.printTimeMinutes) setPrintTimeMinutes(String(product.printTimeMinutes));
+  }, [products, preselectedProductId]);
 
   const filament = filaments.find((f) => f.id === filamentId);
   const printer = printers.find((p) => p.id === printerId);
@@ -119,14 +142,53 @@ export function AdminPricingCalculatorPage() {
     );
   }
 
+  const targetProduct = products.find((p) => p.id === targetProductId);
+  const preselectedProduct = products.find((p) => p.id === preselectedProductId);
+  const price = result.suggestedPrice;
+  const profit = price - result.costWithWaste;
+  // Composição do preço sugerido: cada custo e o lucro, em R$ e em % do preço.
+  const composition = [
+    { label: "Material", value: result.materialCost },
+    { label: `Energia (${result.wattage}W)`, value: result.energyCost },
+    { label: "Máquina", value: result.machineCost },
+    { label: "Mão de obra", value: result.laborCost },
+    { label: "Custo fixo rateado", value: result.overheadCost },
+    { label: "Embalagem", value: result.packaging },
+    { label: `Perda/falha (${wastePercent}%)`, value: result.costWithWaste - result.subtotal },
+    { label: `Lucro (${marginPercent}%)`, value: profit, profit: true },
+  ];
+
+  function numberField(label: string, value: string | number, onChange: (value: string) => void, step?: string) {
+    return (
+      <div className="form-group" style={{ margin: 0 }}>
+        <label>{label}</label>
+        <input
+          className="admin-input"
+          type="number"
+          step={step}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div>
+    <div className="pricing-page">
       <div className="admin-header">
         <h1>Calculadora de Preço</h1>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.2rem" }}>
+
+      {preselectedProduct && (
+        <p style={{ color: "var(--text-muted)", fontSize: ".88rem", marginTop: "-1rem", marginBottom: "1.2rem" }}>
+          Calculando para <strong style={{ color: "var(--text)" }}>{preselectedProduct.name}</strong>. Os dados de impressão
+          salvos no produto já foram carregados.
+        </p>
+      )}
+
+      <div className="panel-grid pricing-grid">
         <div className="admin-form">
-          <h3>🧵 Filamento & Impressão</h3>
+          <h3>🧵 Peça e impressão</h3>
           <div className="form-group">
             <label>Impressora</label>
             <select className="admin-select" value={printerId} onChange={(e) => setPrinterId(e.target.value)}>
@@ -148,85 +210,61 @@ export function AdminPricingCalculatorPage() {
                 </option>
               ))}
             </select>
+            {filament && (
+              <p style={{ color: "var(--text-muted)", fontSize: ".78rem", marginTop: ".4rem" }}>
+                {brl(result.costPerGram * 1000)}/kg
+                {result.printsPerSpool !== null && <> · ~{result.printsPerSpool} peças por rolo</>}
+              </p>
+            )}
           </div>
-          <div className="form-group">
-            <label>Peso usado (g)</label>
-            <input
-              className="admin-input"
-              type="number"
-              value={weightGrams}
-              onChange={(e) => setWeightGrams(e.target.value)}
-            />
+          <div className="pricing-fields">
+            {numberField("Peso usado (g)", weightGrams, setWeightGrams)}
+            {numberField("Tempo de impressão (min)", printTimeMinutes, setPrintTimeMinutes)}
+            {numberField("Mão de obra extra (min)", laborMinutes, setLaborMinutes)}
+            {numberField("Embalagem (R$)", packagingCost, setPackagingCost, "0.01")}
           </div>
-          <div className="form-group">
-            <label>Tempo de impressão (min)</label>
-            <input
-              className="admin-input"
-              type="number"
-              value={printTimeMinutes}
-              onChange={(e) => setPrintTimeMinutes(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Mão de obra extra (min)</label>
-            <input
-              className="admin-input"
-              type="number"
-              value={laborMinutes}
-              onChange={(e) => setLaborMinutes(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Embalagem (R$)</label>
-            <input
-              className="admin-input"
-              type="number"
-              step="0.01"
-              value={packagingCost}
-              onChange={(e) => setPackagingCost(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Perda/falha (%)</label>
-            <input
-              className="admin-input"
-              type="number"
-              value={wastePercent}
-              onChange={(e) => setWastePercent(Number(e.target.value))}
-            />
-          </div>
-          <div className="form-group">
-            <label>Margem desejada (%)</label>
-            <input
-              className="admin-input"
-              type="number"
-              value={marginPercent}
-              onChange={(e) => setMarginPercent(Number(e.target.value))}
-            />
+
+          <h3 style={{ marginTop: "1.6rem" }}>📈 Perda e margem</h3>
+          <div className="pricing-fields">
+            {numberField("Perda/falha (%)", wastePercent, (v) => setWastePercent(Number(v)))}
+            {numberField("Margem desejada (%)", marginPercent, (v) => setMarginPercent(Number(v)))}
           </div>
         </div>
 
-        <div className="admin-form">
+        <div className="admin-form pricing-result" ref={resultRef}>
           <h3>💰 Resultado</h3>
-          <div style={{ fontSize: ".88rem", lineHeight: 2, color: "var(--text-muted)" }}>
-            <div>Material: R$ {result.materialCost.toFixed(2)}</div>
-            <div>Energia: R$ {result.energyCost.toFixed(2)} ({result.wattage}W)</div>
-            <div>Máquina: R$ {result.machineCost.toFixed(2)}</div>
-            <div>Mão de obra: R$ {result.laborCost.toFixed(2)}</div>
-            <div>Custo fixo rateado: R$ {result.overheadCost.toFixed(2)}</div>
-            <div>Embalagem: R$ {result.packaging.toFixed(2)}</div>
-            <div>Subtotal: R$ {result.subtotal.toFixed(2)}</div>
-            <div>Custo com perda: R$ {result.costWithWaste.toFixed(2)}</div>
+          <div className="kpi-label">Preço sugerido</div>
+          <div className="kpi-value">{brl(price)}</div>
+          <div style={{ color: "var(--text-muted)", fontSize: ".85rem", margin: ".3rem 0 1.4rem" }}>
+            Custo {brl(result.costWithWaste)} · Lucro <span style={{ color: "var(--text)" }}>{brl(profit)}</span> por peça
           </div>
-          <h2 style={{ marginTop: "1rem" }}>Preço sugerido: R$ {result.suggestedPrice.toFixed(2)}</h2>
-          {filament && (
-            <p style={{ color: "var(--text-muted)", fontSize: ".8rem" }}>
-              Custo/g: R$ {result.costPerGram.toFixed(4)} · Custo/kg: R$ {(result.costPerGram * 1000).toFixed(2)}
-              {result.printsPerSpool !== null && <> · ~{result.printsPerSpool} peças por rolo</>}
-            </p>
-          )}
 
-          <div className="form-group" style={{ marginTop: "1rem" }}>
+          <ul className="pricing-breakdown">
+            {composition.map((row) => (
+              <li key={row.label}>
+                <div className="pricing-breakdown-row">
+                  <span>{row.label}</span>
+                  <span>
+                    {brl(row.value)}
+                    <span className="pricing-breakdown-pct">
+                      {price > 0 ? `${Math.round((row.value / price) * 100)}%` : "—"}
+                    </span>
+                  </span>
+                </div>
+                <div className="top-products-track">
+                  <div
+                    className="top-products-bar"
+                    style={{
+                      width: `${price > 0 ? Math.max(0, (row.value / price) * 100) : 0}%`,
+                      background: row.profit ? "var(--cyan)" : undefined,
+                    }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="form-group" style={{ marginTop: "1.4rem" }}>
             <label>Aplicar a um produto existente</label>
             <select className="admin-select" value={targetProductId} onChange={(e) => setTargetProductId(e.target.value)}>
               <option value="">Selecione um produto</option>
@@ -236,12 +274,37 @@ export function AdminPricingCalculatorPage() {
                 </option>
               ))}
             </select>
+            {targetProduct && (
+              <p style={{ fontSize: ".85rem", marginTop: ".5rem", color: "var(--text-muted)" }}>
+                Preço atual {brl(targetProduct.price)} → <strong style={{ color: "var(--text)" }}>{brl(price)}</strong>
+                {targetProduct.price > 0 && (
+                  <> ({price >= targetProduct.price ? "+" : ""}
+                    {(((price - targetProduct.price) / targetProduct.price) * 100).toFixed(1).replace(".", ",")}%)
+                  </>
+                )}
+              </p>
+            )}
           </div>
           <button className="btn-primary" style={{ width: "100%" }} onClick={handleApplyToProduct}>
             Aplicar preço ao produto
           </button>
         </div>
       </div>
+
+      {/* Celular: o preço fica sempre à vista enquanto os campos são editados. */}
+      <button
+        className="pricing-sticky"
+        onClick={() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+      >
+        <span>
+          <span className="kpi-label" style={{ display: "block", marginBottom: 0 }}>
+            Preço sugerido
+          </span>
+          <strong style={{ fontSize: "1.15rem" }}>{brl(price)}</strong>
+          <span style={{ color: "var(--text-muted)", fontSize: ".8rem" }}> · custo {brl(result.costWithWaste)}</span>
+        </span>
+        <span style={{ fontSize: ".8rem", color: "var(--text-muted)" }}>Detalhes ↓</span>
+      </button>
     </div>
   );
 }

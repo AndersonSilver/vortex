@@ -3,6 +3,7 @@ import { useCart, useRemoveCartItem, useUpdateCartItem } from "../hooks/useCart"
 import { useProducts } from "../hooks/useProducts";
 import { OrderSummary } from "../components/OrderSummary";
 import { ProductCard } from "../components/ProductCard";
+import { brl } from "../lib/format";
 
 export function CartPage() {
   const navigate = useNavigate();
@@ -89,12 +90,12 @@ export function CartPage() {
                         <div className="cart-item-price">
                           {item.product.oldPrice && (
                             <span className="cart-item-old-price">
-                              R$ {(item.product.oldPrice * item.qty).toFixed(2)}
+                              {brl(item.product.oldPrice * item.qty)}
                             </span>
                           )}
-                          R$ {(item.product.price * item.qty).toFixed(2)}
+                          {brl(item.product.price * item.qty)}
                           {item.qty > 1 && (
-                            <span className="cart-item-unit-price"> (R$ {item.product.price.toFixed(2)}/un)</span>
+                            <span className="cart-item-unit-price"> ({brl(item.product.price)}/un)</span>
                           )}
                         </div>
                       </div>
