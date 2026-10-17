@@ -152,14 +152,17 @@ export function ConsignadoProductsPage() {
           <button className="action-btn sale" onClick={() => openSale(s.productId)}>
             🧾 Vendi
           </button>
-          {s.quantity <= LOW_STOCK &&
-            (requested ? (
-              <span className="status-badge status-pending">Reposição pedida</span>
-            ) : (
-              <button className="action-btn restock" onClick={() => askRestock(s.productId)}>
-                📦 Repor
-              </button>
-            ))}
+          {requested ? (
+            <span className="status-badge status-pending">Reposição pedida</span>
+          ) : (
+            // Amarelo só quando está acabando; nos demais o botão fica neutro.
+            <button
+              className={`action-btn${s.quantity <= LOW_STOCK ? " restock" : ""}`}
+              onClick={() => askRestock(s.productId)}
+            >
+              📦 Repor
+            </button>
+          )}
         </>
       );
     }
