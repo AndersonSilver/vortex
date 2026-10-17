@@ -114,7 +114,9 @@ export function ConsignadoProductsPage() {
   /** `compact` cabe numa linha: usado no card do celular, onde o rótulo "Vendidas" já está em cima. */
   function soldCell(productId: string, compact = false) {
     const sold = salesByProduct.get(productId);
-    if (!sold) return <span style={{ color: "var(--text-muted)" }}>—</span>;
+    if (!sold) {
+      return <span className="sold-empty">{compact ? "—" : "Nenhuma venda ainda"}</span>;
+    }
     if (compact) {
       return (
         <>
@@ -124,10 +126,12 @@ export function ConsignadoProductsPage() {
       );
     }
     return (
-      <>
-        <strong>{sold.pieces}</strong>
-        <div style={{ fontSize: ".78rem", color: "var(--text-muted)" }}>última venda {relativeDay(new Date(sold.lastAt))}</div>
-      </>
+      <div className="sold-cell">
+        <div>
+          <strong>{sold.pieces}</strong> {sold.pieces === 1 ? "peça vendida" : "peças vendidas"}
+        </div>
+        <div className="sold-last">Última venda {relativeDay(new Date(sold.lastAt))}</div>
+      </div>
     );
   }
 
@@ -145,17 +149,20 @@ export function ConsignadoProductsPage() {
     if (tab === "in") {
       return (
         <>
-          <button className="action-btn" onClick={() => openSale(s.productId)}>
-            Vendi
+          <button className="action-btn sale" onClick={() => openSale(s.productId)}>
+            🧾 Vendi
           </button>
-          {s.quantity <= LOW_STOCK &&
-            (requested ? (
-              <span style={{ fontSize: ".78rem", color: "var(--text-muted)" }}>reposição pedida</span>
-            ) : (
-              <button className="action-btn" onClick={() => askRestock(s.productId)}>
-                Repor
-              </button>
-            ))}
+          {requested ? (
+            <span className="status-badge status-pending">Reposição pedida</span>
+          ) : (
+            // Amarelo só quando está acabando; nos demais o botão fica neutro.
+            <button
+              className={`action-btn${s.quantity <= LOW_STOCK ? " restock" : ""}`}
+              onClick={() => askRestock(s.productId)}
+            >
+              📦 Repor
+            </button>
+          )}
         </>
       );
     }
@@ -167,7 +174,7 @@ export function ConsignadoProductsPage() {
         </button>
       </>
     ) : (
-      <button className="action-btn" onClick={() => askRestock(s.productId)}>
+      <button className="action-btn restock" onClick={() => askRestock(s.productId)}>
         📦 Pedir reposição
       </button>
     );
@@ -280,7 +287,7 @@ export function ConsignadoProductsPage() {
               ) : (
                 <>
                   <th>Vendidas</th>
-                  <th>Reposição</th>
+                  <th style={{ textAlign: "right" }}>Reposição</th>
                 </>
               )}
             </tr>
@@ -314,7 +321,7 @@ export function ConsignadoProductsPage() {
                   )}
                   <td>{soldCell(s.productId)}</td>
                   <td>
-                    <div style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>{rowActions(s)}</div>
+                    <div className="row-actions">{rowActions(s)}</div>
                   </td>
                 </tr>
               ))

@@ -2270,6 +2270,57 @@ footer {
   }
 }
 
+/* Botões de linha com cor pela ação: vender (roxo) e repor (amarelo de alerta de estoque). */
+.action-btn.sale {
+  color: var(--purple-light);
+  border-color: rgba(108, 59, 255, 0.5);
+  background: rgba(108, 59, 255, 0.12);
+}
+.action-btn.sale:hover {
+  color: #fff;
+  border-color: var(--purple);
+  background: var(--purple);
+}
+.action-btn.restock {
+  color: var(--warning);
+  border-color: rgba(255, 184, 0, 0.45);
+  background: rgba(255, 184, 0, 0.1);
+}
+.action-btn.restock:hover {
+  color: var(--bg3);
+  border-color: var(--warning);
+  background: var(--warning);
+}
+.row-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+}
+.row-actions .action-btn {
+  margin-right: 0;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.sold-cell {
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+.sold-cell strong {
+  font-size: 1rem;
+}
+.sold-last {
+  margin-top: 0.15rem;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+.sold-empty {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
 /* MOBILE CARDS: no celular a tabela (.desktop-table) some e cada linha vira um card. */
 .mobile-cards {
   display: none;
